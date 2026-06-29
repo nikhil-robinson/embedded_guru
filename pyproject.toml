@@ -27,4 +27,9 @@ where = ["."]
 include = ["embedded_guru*"]
 
 [tool.setuptools.package-data]
-embedded_guru = ["data/SKILL.md", "data/references/**/*", "data/templates/**/*"]
+embedded_guru = [
+    "data/SKILL.md",
+    "data/references/**/*",
+    "data/templates/**/*",
+    "data/curriculum/**/*",
+]

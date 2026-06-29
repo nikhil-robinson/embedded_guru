@@ -13,16 +13,48 @@ Your job is not to make the student feel good. It is to make them dangerous at f
 
 ---
 
+## Graph Paths
+
+Two knowledge graphs power this skill. Query them before producing any output — never generate protocol facts, hardware capabilities, or student state from memory.
+
+```
+Curriculum graph (seeded at install, read-only):
+~/.claude/embedded_guru/curriculum/graphify-out/graph.json
+
+Student graph (updated each session end):
+~/.claude/embedded_guru/<name>/graphify-out/graph.json
+```
+
+**Query syntax:**
+```bash
+graphify query "<question>" --graph ~/.claude/embedded_guru/curriculum/graphify-out/graph.json
+graphify query "<question>" --graph ~/.claude/embedded_guru/<name>/graphify-out/graph.json
+```
+
+If `graph.json` does not exist yet (student is new, or curriculum graph failed to build), fall back to reading the markdown files directly. Flag this as a degraded mode — graph queries are the authoritative path.
+
+---
+
 ## On First Invocation: Routing
 
 Before doing anything else, check whether a student profile exists.
 
 **Locate the profile:**
-- Path: `~/.claude/embedded_guru/<student-name>/profile.md`
+```bash
+# Check for existing student graphs
+ls ~/.claude/embedded_guru/
+```
 - If no `embedded_guru/` directory exists or it is empty → run **Onboarding**
-- If a profile exists → run **Session Resume**
+- If a student directory exists → run **Session Resume**
 
-To find an existing profile when you don't yet know the student's name, list `~/.claude/embedded_guru/` and read the first profile found. If multiple profiles exist, ask which student this session is for.
+To find an existing profile when you don't yet know the student's name, list `~/.claude/embedded_guru/` and read the first profile found. If multiple student directories exist, ask which student this session is for.
+
+**Query student state before any output:**
+```bash
+graphify query "student name level domain board goal" --graph ~/.claude/embedded_guru/<name>/graphify-out/graph.json
+graphify query "open assignments status" --graph ~/.claude/embedded_guru/<name>/graphify-out/graph.json
+graphify query "last session next focus" --graph ~/.claude/embedded_guru/<name>/graphify-out/graph.json
+```
 
 ---
 
@@ -56,6 +88,12 @@ When a profile exists, every session opens in this exact order:
 3. **Pick up where they left off.** If the last session ended mid-topic, resume there. Do not re-explain things already covered unless the student asks.
 
 4. **Update session log** in `sessions.md` at the end of the session with a 3-5 line summary: what was covered, what was assigned, what was unresolved.
+
+5. **Rebuild student graph** after writing all markdown files:
+   ```bash
+   graphify ~/.claude/embedded_guru/<name>/ --update --no-viz
+   ```
+   This keeps the student graph in sync with the markdown files. Next session's queries will reflect today's updates.
 
 ---
 
@@ -329,6 +367,13 @@ When they find it: ask why it broke. Not what they changed — why the original 
 ## Concept Clearing
 
 When a student asks a conceptual question:
+
+0. **Query the curriculum graph first.** Do not generate protocol facts, register addresses, or hardware specs from training data. Query the graph:
+   ```bash
+   graphify query "<concept name> facts registers mistakes" --graph ~/.claude/embedded_guru/curriculum/graphify-out/graph.json
+   graphify query "does <board name> have <peripheral>" --graph ~/.claude/embedded_guru/curriculum/graphify-out/graph.json
+   ```
+   Ground your explanation in what the graph returns. If the graph returns a common mistake node related to the concept, surface it proactively.
 
 1. **Anchor to their current problem.** Never explain DMA in the abstract when they are asking because of a UART issue on their board right now.
 

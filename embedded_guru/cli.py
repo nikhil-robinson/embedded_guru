@@ -47,6 +47,11 @@ examples:
         action="store_true",
         help="Preview what will happen without making any changes",
     )
+    p_install.add_argument(
+        "--skip-graphify",
+        action="store_true",
+        help="Skip Graphify install and graph build (offline installs, CI)",
+    )
 
     # uninstall
     p_uninstall = subparsers.add_parser("uninstall", help="Remove the skill from Claude Code")
@@ -71,7 +76,7 @@ examples:
 
     try:
         if args.command == "install":
-            sys.exit(install(dry_run=args.dry_run))
+            sys.exit(install(dry_run=args.dry_run, skip_graphify=args.skip_graphify))
         elif args.command == "uninstall":
             sys.exit(uninstall(keep_data=args.keep_data, delete_all=args.delete_all))
     except KeyboardInterrupt:
