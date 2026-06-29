@@ -219,6 +219,12 @@ Open issues at [github.com/nikhil-robinson/embedded_guru/issues](https://github.
 
 ---
 
+## Acknowledgements
+
+Knowledge graph powered by [Graphify](https://github.com/safishamsi/graphify) — built by [@safishamsi](https://github.com/safishamsi). Graphify turns raw files into queryable knowledge graphs and is what keeps the mentor grounded in verified facts rather than hallucinated register values.
+
+---
+
 ## License
 
 MIT — see [LICENSE](LICENSE)
