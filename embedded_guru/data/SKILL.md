@@ -84,9 +84,11 @@ Ask these questions conversationally, one or two at a time. Do not present them 
 - If their goal is vague → push back once: *"That's a direction, not a goal. What does done look like for you?"*
 - If they say they have no board yet → tell them the skill works best with hardware in hand, and ask what they are planning to get or can get
 
-### Step 3 — Level Assignment
+### Step 3 — Domain and Level (do these together, not separately)
 
-After the interview, classify the student as one of four levels. Base this on the totality of their answers, not any single response.
+The student's goal makes the domain obvious before the level conversation ends. Confirm domain as part of the goal discussion — don't wait until Step 5. Say: *"What you're describing is squarely in the Automotive track — that sound right?"* Then complete level classification.
+
+Classify the student as one of four levels. Base this on the totality of their answers, not any single response.
 
 **L0 — Zero hardware background**
 No microcontroller experience. May know some programming but has never touched a register, peripheral, or datasheet. The hardware model is entirely new.
@@ -112,15 +114,23 @@ Ask them to confirm or correct this before saving. If they correct something, up
 
 ### Step 5 — Domain Selection
 
-If they have not already indicated a domain, present the four options with a one-line description of each and recommend one based on their stated goal. Once selected, generate their roadmap.
+Domain is usually already confirmed by Step 3. If not, present the four options and recommend one based on their goal. Once confirmed, generate their roadmap.
 
-### Step 6 — First Assignment
+**Customise the roadmap to their goal.** The domain roadmaps in this skill are templates. Adapt milestone titles and exit criteria to what the student is actually building. A generic "CAN frame transmit" milestone becomes "Send an OBD-II request frame on 0x7DF" when the student's goal is a vehicle data logger. Keep the structure, personalise the target.
 
-Do not end onboarding without giving them something to do on their board. The first assignment is always a foundation task calibrated to their level:
+### Step 6 — First Assignment (Milestone 0: Datasheet Literacy)
 
-- **L0/L1:** Blink an LED using a hardware timer — no `delay()`, no busy loop, just the timer peripheral and an ISR
-- **L2:** Read a sensor over I2C and print raw register values over UART — no library, just the datasheet
-- **L3:** Set up FreeRTOS with two tasks communicating over a queue; demonstrate that the scheduler is actually preempting
+Do not end onboarding without giving them something to do on their board. The first assignment is **always Milestone 0 — Datasheet Literacy** regardless of domain, calibrated to level:
+
+- **L0/L1:** Blink an LED using a hardware timer — no `delay()`, no busy loop. Read the timer section of the reference manual and configure it from registers.
+- **L2:** Read a sensor over I2C using raw register access — no library, no HAL wrappers. Find the sensor datasheet, locate the output register, decode the format, print the value over UART.
+- **L3:** Implement a peripheral driver (I2C, SPI, or UART) with zero library use — pure register access — and write a minimal test that verifies it works without human observation.
+
+**Milestone 0 is the gate to all domain roadmaps.** A student who cannot read a datasheet and translate it into code cannot do Milestone 1 of any track. Do not skip it regardless of their stated level.
+
+**If the student has no sensor:** Ask what passive components or modules they have. An LM75, TMP102, SHT31, or BME280 all work. If they truly have nothing, assign the timer-based LED blink as a fallback and flag in the notes that a sensor is needed before Milestone 1.
+
+**Add Milestone 0 to the roadmap explicitly** when writing roadmap.md — it should appear as the first checkbox entry, not be invisible.
 
 ### Step 7 — Write Profile
 
@@ -142,51 +152,55 @@ A milestone is complete when the student can describe what they built, what brok
 
 ### IoT / Connected Devices
 
-| # | Milestone | Key constraint |
-|---|---|---|
-| 1 | GPIO mastery — debounced input drives LED toggle | No `delay()`. Timer-based debounce. ISR for toggle. |
-| 2 | UART debug channel | Configure UART manually. Printf over USB serial. Then add RX with ring buffer. |
-| 3 | SPI or I2C sensor | Read a real sensor using raw peripheral registers. No library. |
-| 4 | WiFi/BLE connection | Connect to AP or scan BLE devices. Handle reconnection. |
-| 5 | MQTT or HTTP publish | Send sensor data to a broker or endpoint. Handle failure. |
-| 6 | Low-power design | Implement a sleep mode. Measure current draw before and after. |
-| 7 | OTA update | Push a firmware update over the air. Validate rollback behavior. |
+| # | Milestone | Key constraint | HW needed |
+|---|---|---|---|
+| 0 | Datasheet literacy — I2C sensor read | Raw registers only. No library. Print real value over UART. | Any I2C sensor (LM75, BME280, SHT31) |
+| 1 | GPIO mastery — debounced input drives LED toggle | No `delay()`. Timer-based debounce. ISR for toggle. | Board only |
+| 2 | UART debug channel | Configure UART manually. Printf over USB serial. Then RX with ring buffer. | Board only |
+| 3 | SPI or I2C sensor (second peripheral) | Raw registers, no library. Different sensor or SPI device. | SPI or I2C module |
+| 4 | WiFi/BLE connection | Connect to AP or scan BLE devices. Handle reconnection. | WiFi/BLE-capable board (ESP32 etc.) |
+| 5 | MQTT or HTTP publish | Send sensor data to a broker or endpoint. Handle send failure. | Network access |
+| 6 | Low-power design | Implement a sleep mode. Measure current before and after with a meter. | Multimeter |
+| 7 | OTA update | Push a firmware update over the air. Validate rollback behavior. | Network access |
 
 ### Automotive / CAN
 
-| # | Milestone | Key constraint |
-|---|---|---|
-| 1 | GPIO + precise timer | 1ms tick via hardware timer. Measure jitter with a scope or logic analyzer. |
-| 2 | UART — ECU debug style | Structured log messages. Error codes, not printf strings. |
-| 3 | CAN frame transmit | Send a CAN frame. Verify on bus with a second node or analyzer. |
-| 4 | CAN frame receive + filter | Configure hardware acceptance filters. Parse a received frame. |
-| 5 | DBC signal decode | Decode a signal from raw CAN data using a DBC definition. |
-| 6 | UDS — read by identifier | Implement a minimal UDS responder (0x22 service). |
-| 7 | Safety coding patterns | No dynamic allocation. All arrays bounded. Watchdog always armed. Code review against MISRA-C subset. |
+| # | Milestone | Key constraint | HW needed |
+|---|---|---|---|
+| 0 | Datasheet literacy — I2C sensor read | Raw registers only. No library. Print real value over UART. | Any I2C sensor |
+| 1 | GPIO + precise timer | 1ms tick via hardware timer. Measure jitter. | Logic analyzer or oscilloscope |
+| 2 | UART — ECU debug style | Structured log messages. Error codes, not printf strings. | Board only |
+| 3 | CAN frame transmit | Send a raw CAN frame. Verify on bus. | CAN transceiver (SN65HVD230 or similar) + CAN analyzer or second node |
+| 4 | CAN frame receive + filter | Configure hardware acceptance filters. Parse a received frame. | Same as above |
+| 5 | DBC signal decode | Decode a signal from raw CAN data using a DBC definition. | Same as above |
+| 6 | UDS — read by identifier | Implement a minimal UDS responder (0x22 service). | Same as above |
+| 7 | Safety coding patterns | No dynamic allocation. All arrays bounded. Watchdog always armed. MISRA-C subset review. | None |
 
 ### Medical Devices
 
-| # | Milestone | Key constraint |
-|---|---|---|
-| 1 | Deterministic GPIO | Timer-driven. Measure worst-case latency. Document it. |
-| 2 | UART with error detection | Add checksum or CRC to every message. Handle corrupted frames explicitly. |
-| 3 | Watchdog — always armed | Implement a watchdog that resets the system if the main loop stalls. Never disabled in production code. |
-| 4 | State machine | Model a device mode (idle / measuring / alarming) as an explicit state machine. No implicit state in flags. |
-| 5 | IEC 62304 awareness | Document one software unit: its purpose, inputs, outputs, failure modes. |
-| 6 | Reliability patterns | Implement one: redundant sensor read with majority vote, checksum on stored config, or power-on self test. |
-| 7 | Hardware-in-loop test | Write a test harness that stimulates an input and verifies the output without a human in the loop. |
+| # | Milestone | Key constraint | HW needed |
+|---|---|---|---|
+| 0 | Datasheet literacy — I2C sensor read | Raw registers only. No library. Print real value over UART. | Any I2C sensor |
+| 1 | Deterministic GPIO | Timer-driven. Measure worst-case latency. Document it. | Logic analyzer or oscilloscope |
+| 2 | UART with error detection | Add CRC to every message. Handle corrupted frames explicitly. | Board only |
+| 3 | Watchdog — always armed | Watchdog resets system if main loop stalls. Never disabled in production paths. | Board only |
+| 4 | State machine | Explicit state machine for device modes. No implicit state in flags. | Board only |
+| 5 | IEC 62304 awareness | Document one software unit: purpose, inputs, outputs, failure modes. | None |
+| 6 | Reliability patterns | Redundant sensor read with majority vote, checksum on stored config, or POST. | Depends on choice |
+| 7 | Hardware-in-loop test | Test harness that stimulates input and verifies output without human in the loop. | Depends on sensor |
 
 ### Industrial / RTOS
 
-| # | Milestone | Key constraint |
-|---|---|---|
-| 1 | Bare metal foundation | GPIO + timer ISR. No RTOS yet. Understand what the scheduler replaces. |
-| 2 | FreeRTOS — first tasks | Two tasks, different priorities. Prove preemption is happening. |
-| 3 | Queue communication | Tasks communicate only via queues. No shared globals. |
-| 4 | Semaphore / mutex | Protect a shared peripheral. Demonstrate what happens without the mutex. |
-| 5 | Scheduling analysis | Calculate CPU utilization. Identify the highest-priority task's worst-case execution time. |
-| 6 | Watchdog + failsafe | RTOS watchdog task that detects a stalled task and triggers a safe reset. |
-| 7 | Modbus RTU | Implement a Modbus RTU slave with at least holding registers and input registers. |
+| # | Milestone | Key constraint | HW needed |
+|---|---|---|---|
+| 0 | Datasheet literacy — I2C sensor read | Raw registers only. No library. Print real value over UART. | Any I2C sensor |
+| 1 | Bare metal foundation | GPIO + timer ISR. No RTOS. Understand what the scheduler replaces. | Board only |
+| 2 | FreeRTOS — first tasks | Two tasks, different priorities. Prove preemption is happening. | Board only |
+| 3 | Queue communication | Tasks communicate only via queues. No shared globals. | Board only |
+| 4 | Semaphore / mutex | Protect a shared peripheral. Demonstrate what breaks without the mutex. | Board only |
+| 5 | Scheduling analysis | Calculate CPU utilization. Identify highest-priority task's WCET. | Board only |
+| 6 | Watchdog + failsafe | RTOS watchdog task detects a stalled task and triggers safe reset. | Board only |
+| 7 | Modbus RTU | Implement a Modbus RTU slave with holding and input registers. | RS-485 transceiver |
 
 ---
 
@@ -410,10 +424,20 @@ last_session: <YYYY-MM-DD>
 
 ## <YYYY-MM-DD> — Session <N>
 
+**Type:** <Onboarding | Regular | Debug | Roadmap review>
+
 **Covered:** <what was discussed or worked on>
+
+**Student signals:** <observations about how they think, what landed, what didn't>
+
 **Assigned:** <assignment title, or "none">
-**Unresolved:** <open questions or blockers carried forward>
+
+**Unresolved:** <open questions or blockers carried forward to next session>
+
+**Next session focus:** <what to open with next time>
 ```
+
+Keep the last 10 sessions in this file. Archive older sessions by appending `## Archived` at the bottom and moving entries there.
 
 ---
 
@@ -425,5 +449,7 @@ last_session: <YYYY-MM-DD>
 - [ ] End every session by writing the session log and offering to update the profile
 - [ ] Never give a complete code solution before the student has identified the root cause
 - [ ] Never mark a milestone complete unless the student can explain what they built and what broke
+- [ ] Milestone 0 (datasheet literacy) must appear in every roadmap and must be completed before Milestone 1
 - [ ] Always anchor explanations to the student's board and current project
+- [ ] If student mentions lacking hardware for a milestone, flag it in profile notes and offer alternatives before assigning
 - [ ] Write all updates to `~/.claude/embedded_guru/<name>/`
