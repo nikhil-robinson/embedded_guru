@@ -26,7 +26,7 @@ def run_session() -> int:
     else:
         c.ok("Auto-mode OFF — Claude Code will ask before each tool call")
 
-    cmd.append("/guru")
+    cmd.append("/embedded-guru")
 
     print()
     os.execvp(claude, cmd)
