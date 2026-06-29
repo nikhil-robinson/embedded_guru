@@ -56,6 +56,23 @@ WEIGHTS = {
 }
 
 
+_LATIN1_REPLACEMENTS = str.maketrans({
+    "—": "--",   # em dash
+    "–": "-",    # en dash
+    "‘": "'",    # left single quote
+    "’": "'",    # right single quote
+    "“": '"',    # left double quote
+    "”": '"',    # right double quote
+    "…": "...",  # ellipsis
+    "·": ".",    # middle dot (fallback)
+})
+
+
+def _safe(text: str) -> str:
+    """Replace common Unicode characters that Helvetica (latin-1) cannot encode."""
+    return text.translate(_LATIN1_REPLACEMENTS).encode("latin-1", errors="replace").decode("latin-1")
+
+
 def _grade(score: float) -> str:
     for threshold, label in GRADES:
         if score >= threshold:
@@ -104,14 +121,14 @@ class ScorecardPDF(FPDF):
         # student name
         self.set_font("Helvetica", "B", 16)
         self.set_xy(14, 30)
-        self.cell(0, 8, d.get("name", "—"))
+        self.cell(0, 8, _safe(d.get("name", "-")))
 
         # meta: domain | level | date
         self.set_font("Helvetica", "", 9)
         self.set_text_color(*C_ACCENT)
         self.set_xy(14, 40)
         issued = d.get("date", datetime.today().strftime("%Y-%m-%d"))
-        meta = f"Domain: {d.get('domain','—')}   ·   Level: {d.get('level','—')}   ·   Issued: {issued}"
+        meta = _safe(f"Domain: {d.get('domain','-')}   |   Level: {d.get('level','-')}   |   Issued: {issued}")
         self.cell(0, 5, meta)
 
     # ── grade badge (top-right) ─────────────────────────────────────────────────
@@ -222,7 +239,7 @@ class ScorecardPDF(FPDF):
             self.set_text_color(*C_MID)
             self.set_font("Helvetica", "I", 9)
             self.set_xy(14, y)
-            self.multi_cell(180, 5, f"Mentor note: {notes}")
+            self.multi_cell(180, 5, _safe(f"Mentor note: {notes}"))
             y += 12
 
         return y

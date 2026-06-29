@@ -17,8 +17,6 @@ BANNER = r"""
 
 
 def main():
-    print(BANNER.format(version=__version__))
-
     parser = argparse.ArgumentParser(
         prog="embeddedguru",
         description="EmbeddedGuru — firmware development mentor for Claude Code",
@@ -99,6 +97,8 @@ examples:
     )
 
     args = parser.parse_args()
+
+    print(BANNER.format(version=__version__), flush=True)
 
     if args.command is None:
         parser.print_help()
