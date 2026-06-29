@@ -1,3 +1,4 @@
+import json
 import re
 import shutil
 import subprocess
@@ -44,6 +45,7 @@ def install(dry_run: bool = False, skip_graphify: bool = False) -> int:
     _ensure_data_dir(dry_run, warnings)
     _install_curriculum(dry_run, warnings)
     _register(dry_run, warnings)
+    _patch_settings(dry_run, warnings)
 
     _print_summary(dry_run, reinstall, graphify_ok, warnings)
     return 0
@@ -73,6 +75,7 @@ def uninstall(keep_data: bool = False, delete_all: bool = False) -> int:
 
     _remove_skill_files()
     _deregister()
+    _unpatch_settings()
 
     if data_dir().exists():
         if remove_data:
@@ -249,6 +252,170 @@ def _install_curriculum(dry_run: bool, warnings: List[str]):
 
     c.ok(f"Curriculum files ready at {dst}")
     c.info("Knowledge graph will be built on your first /guru session")
+
+
+# ─── auto-allow permissions ────────────────────────────────────────────────────
+
+# Each entry is (rule, plain-English description, risk level).
+# Stored as a module-level structure so uninstall can remove exactly these
+# rules and nothing else, even across versions.
+_PERMISSION_TABLE = [
+    (
+        "Bash(graphify *)",
+        "Run graphify commands (build graph, query facts)",
+        "MEDIUM — applies to ALL Claude Code sessions, not just /guru.\n"
+        "         If graphify is replaced by a malicious binary, calls are\n"
+        "         auto-approved with no safety prompt.",
+    ),
+    (
+        "Bash(embeddedguru scorecard *)",
+        "Generate PDF scorecards after /guru assess",
+        "LOW    — scoped to this CLI; still applies globally.",
+    ),
+    (
+        None,  # path rules built at runtime — see _skill_permissions()
+        "Read skill files (SKILL.md, references)",
+        "LOW    — read-only access to files you already own.",
+    ),
+    (
+        None,
+        "Read student data (profile, progress, assessments)",
+        "LOW    — read-only; another session could silently read your history.",
+    ),
+    (
+        None,
+        "Write student data (save progress, assessment results)",
+        "HIGH   — any Claude Code session (or a prompt-injection attack\n"
+        "         in a different project) could silently overwrite your\n"
+        "         progress, assignments, or assessment scores.",
+    ),
+]
+
+
+def _skill_permissions() -> List[str]:
+    """Return the exact list of rule strings for this install."""
+    d = str(data_dir())
+    s = str(skill_dir())
+    return [
+        "Bash(graphify *)",
+        "Bash(embeddedguru scorecard *)",
+        f"Read({s}/**)",
+        f"Read({d}/**)",
+        f"Write({d}/**)",
+    ]
+
+
+def _patch_settings(dry_run: bool, warnings: List[str]):
+    """Ask the user whether to add auto-allow rules, then write them if yes."""
+    settings_path = claude_home() / "settings.json"
+    c.header("Auto-allow permissions (optional)")
+
+    # ── explain what will be added ─────────────────────────────────────────────
+    rules = _skill_permissions()
+    perms_with_meta = list(zip(rules, _PERMISSION_TABLE))
+
+    print()
+    print(f"  {c.bold('Without these rules')} Claude Code will ask 'Allow? [y/n]' for")
+    print(f"  every graphify and file command during a /guru session.")
+    print()
+    print(f"  {c.bold('With these rules')} those prompts are skipped automatically.")
+    print()
+    print(f"  {c.yellow('IMPORTANT: rules apply to ALL Claude Code sessions, not just /guru.')}")
+    print()
+    for rule, (_, desc, risk) in perms_with_meta:
+        risk_lines = risk.splitlines()
+        print(f"  {c.bold(rule)}")
+        print(f"    What: {desc}")
+        print(f"    Risk: {risk_lines[0]}")
+        for extra_line in risk_lines[1:]:
+            print(f"          {extra_line}")
+        print()
+    print()
+    print(f"  {c.yellow('Risks if you enable auto-allow:')}")
+    print(f"  1. Prompt injection in an unrelated project could silently run")
+    print(f"     graphify commands or overwrite your student data.")
+    print(f"  2. A supply-chain attack replacing the graphify binary would")
+    print(f"     be auto-approved — no safety prompt to catch it.")
+    print(f"  3. Any Claude Code session can read your student profile and")
+    print(f"     assessment history without asking.")
+    print()
+    print(f"  {c.bold('You can remove these rules at any time with:')}")
+    print(f"  embeddedguru uninstall  (or --keep-data to preserve progress)")
+    print()
+
+    if dry_run:
+        c.info("[DRY RUN] would ask for consent here — skipping in dry-run mode")
+        return
+
+    # ── already installed? ─────────────────────────────────────────────────────
+    try:
+        existing = json.loads(settings_path.read_text(encoding="utf-8")) if settings_path.exists() else {}
+        already = set(existing.get("permissions", {}).get("allow", []))
+        if all(r in already for r in rules):
+            c.ok("Auto-allow rules already present — skipping.")
+            return
+    except (OSError, json.JSONDecodeError):
+        existing = {}
+
+    # ── explicit consent ───────────────────────────────────────────────────────
+    print(f"  {c.bold('Enable auto-allow? (reduces prompts but carries the risks above)')}")
+    print(f"  Type {c.bold('yes')} to enable, anything else to skip: ", end="", flush=True)
+    try:
+        answer = input("").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        print()
+        answer = ""
+    print()
+
+    if answer != "yes":
+        c.info("Auto-allow skipped — you will see per-command prompts during /guru sessions.")
+        c.info("Re-run 'embeddedguru install' at any time to enable it.")
+        return
+
+    # ── write rules ────────────────────────────────────────────────────────────
+    try:
+        data = dict(existing)
+        perms = data.setdefault("permissions", {})
+        allow: list = perms.setdefault("allow", [])
+
+        to_add = [r for r in rules if r not in allow]
+        allow.extend(to_add)
+
+        tmp = settings_path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        tmp.replace(settings_path)
+        c.ok(f"Added {len(to_add)} auto-allow rules to {settings_path}")
+
+    except (OSError, json.JSONDecodeError) as e:
+        msg = f"Could not update {settings_path}: {e}"
+        c.warn(msg)
+        warnings.append(msg)
+
+
+def _unpatch_settings():
+    """Remove embedded-guru auto-allow rules from ~/.claude/settings.json."""
+    settings_path = claude_home() / "settings.json"
+    if not settings_path.exists():
+        return
+
+    try:
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+        allow: list = data.get("permissions", {}).get("allow", [])
+
+        skill_perms = set(_skill_permissions())
+        new_allow = [r for r in allow if r not in skill_perms]
+
+        if len(new_allow) == len(allow):
+            return  # nothing embedded-guru added
+
+        data["permissions"]["allow"] = new_allow
+        tmp = settings_path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        tmp.replace(settings_path)
+        c.ok("Removed embedded-guru auto-allow rules from settings.json")
+
+    except (OSError, json.JSONDecodeError) as e:
+        c.warn(f"Could not update settings.json: {e}")
 
 
 # ─── core install helpers ──────────────────────────────────────────────────────
