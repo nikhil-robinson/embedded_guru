@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-8B5CF6?style=for-the-badge" alt="Platform"/>
 </p>
 
-<a href="https://buymeacoffee.com/nikhilrobinson">
+<a href="https://buymeacoffee.com/nilkhil_robinson">
   <img src="https://img.shields.io/badge/☕%20Buy%20Me%20A%20Coffee-Support%20this%20project-FFDD00?style=for-the-badge&logoColor=black" alt="Buy Me A Coffee"/>
 </a>
 
@@ -233,7 +233,7 @@ Built by [Nikhil Robinson](https://github.com/nikhil-robinson)
 
 *If this helped you understand why your I2C bus was stuck at 3am, consider buying a coffee.*
 
-<a href="https://buymeacoffee.com/nikhilrobinson">
+<a href="https://buymeacoffee.com/nilkhil_robinson">
   <img src="https://img.shields.io/badge/☕%20Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logoColor=black" alt="Buy Me A Coffee"/>
 </a>
 
