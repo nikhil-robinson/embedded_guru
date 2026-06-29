@@ -5,19 +5,35 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "embedded-guru"
 version = "0.1.0"
-description = "Firmware development mentor skill for Claude Code"
+description = "Firmware development mentor skill for Claude Code — teaches bare-metal embedded firmware by doing"
 readme = "README.md"
-license = { file = "LICENSE" }
-requires-python = ">=3.7"
-keywords = ["embedded", "firmware", "claude", "skill", "mentor"]
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+keywords = ["embedded", "firmware", "stm32", "esp32", "rtos", "claude", "skill", "mentor", "education"]
+authors = [
+    { name = "Nikhil Robinson", email = "nikhilrobinson2000@gmail.com" },
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Education",
+    "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Education",
     "Topic :: Software Development :: Embedded Systems",
+    "Operating System :: OS Independent",
 ]
+
+[project.urls]
+Homepage = "https://github.com/nikhil-robinson/embedded_guru"
+Repository = "https://github.com/nikhil-robinson/embedded_guru"
+"Bug Tracker" = "https://github.com/nikhil-robinson/embedded_guru/issues"
 
 [project.scripts]
 embeddedguru = "embedded_guru.cli:main"
