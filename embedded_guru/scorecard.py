@@ -1,35 +1,45 @@
 """
-EmbeddedGuru assessment scorecard — generates a PDF certificate from a JSON results file.
+EmbeddedGuru assessment certificate — generates a PNG from a JSON results file.
 """
 from __future__ import annotations
 
 import json
+import textwrap
 from datetime import datetime
 from pathlib import Path
-from typing import Dict
 
-from fpdf import FPDF
+from PIL import Image, ImageDraw, ImageFont
 
 # ── brand ──────────────────────────────────────────────────────────────────────
-BRAND       = "EmbeddedGuru"
-AUTHOR      = "Nikhil Robinson"
-GITHUB      = "github.com/nikhil-robinson/embedded_guru"
-WATERMARK   = f"Powered by {BRAND}  ·  Created by {AUTHOR}  ·  {GITHUB}"
+BRAND  = "EmbeddedGuru"
+AUTHOR = "Nikhil Robinson"
+GITHUB = "github.com/nikhil-robinson/embedded_guru"
 
-# ── colours (R, G, B) ──────────────────────────────────────────────────────────
-C_BG        = (10,  15,  30)    # near-black header
-C_ACCENT    = (0,  180, 216)    # electric cyan
-C_GOLD      = (251, 191,  36)   # grade badge
+# ── palette ────────────────────────────────────────────────────────────────────
+C_LEFT_BG   = ( 10,  18,  42)   # deep navy
+C_RIGHT_BG  = (255, 255, 255)   # white
+C_ROW_ALT   = (238, 243, 250)   # alternating row tint
+C_AMBER     = (245, 158,  11)   # gold accent
 C_WHITE     = (255, 255, 255)
-C_LIGHT     = (240, 242, 247)   # alternating row bg
-C_DARK_TEXT = (20,  20,  40)
-C_MID       = (100, 110, 130)
-C_BAR_BG    = (220, 225, 235)
-C_BAR_LOW   = (239,  68,  68)   # red   <50
-C_BAR_MID   = (251, 146,  60)   # amber 50-69
-C_BAR_OK    = (34,  197,  94)   # green >=70
+C_MUTED     = (148, 163, 184)   # muted on dark bg
+C_INK       = ( 10,  18,  42)   # near-black text on white
+C_MID       = ( 71,  85, 105)   # secondary text on white
+C_SUBTLE    = (148, 163, 184)   # very muted on white
+C_BAR_BG    = (209, 219, 233)   # bar track
+C_GREEN     = ( 22, 163,  74)   # >= 70
+C_ORANGE    = (234,  88,  12)   # 50-69
+C_RED       = (220,  38,  38)   # < 50
+C_DIVIDER   = (203, 213, 225)
+C_SPLIT     = ( 20,  32,  70)   # vertical divider
 
-# ── grade thresholds ───────────────────────────────────────────────────────────
+# ── canvas ─────────────────────────────────────────────────────────────────────
+W, H   = 1400, 900
+SPLIT  =  440
+PAD_L  =   42
+PAD_R  =   52
+PAD_RE =   44
+
+# ── domain tables ──────────────────────────────────────────────────────────────
 GRADES = [
     (90, "Principal Engineer"),
     (80, "Expert"),
@@ -40,37 +50,39 @@ GRADES = [
 ]
 
 CATEGORY_LABELS = {
-    "core_firmware":       "Core Firmware Fundamentals",
-    "protocols":           "Protocol Knowledge",
-    "safety_reliability":  "Safety & Reliability",
-    "domain_expertise":    "Domain Expertise",
-    "debugging":           "Debugging & Problem Solving",
+    "core_firmware":      "Core Firmware Fundamentals",
+    "protocols":          "Protocol Knowledge",
+    "safety_reliability": "Safety & Reliability",
+    "domain_expertise":   "Domain Expertise",
+    "debugging":          "Debugging & Problem Solving",
 }
 
 WEIGHTS = {
-    "core_firmware":       0.20,
-    "protocols":           0.25,
-    "safety_reliability":  0.20,
-    "domain_expertise":    0.25,
-    "debugging":           0.10,
+    "core_firmware":      0.20,
+    "protocols":          0.25,
+    "safety_reliability": 0.20,
+    "domain_expertise":   0.25,
+    "debugging":          0.10,
+}
+
+# ── fonts ──────────────────────────────────────────────────────────────────────
+_FONTS = {
+    "reg":  ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+             "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"),
+    "bold": ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+             "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"),
+    "ital": ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf",
+             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
 }
 
 
-_LATIN1_REPLACEMENTS = str.maketrans({
-    "—": "--",   # em dash
-    "–": "-",    # en dash
-    "‘": "'",    # left single quote
-    "’": "'",    # right single quote
-    "“": '"',    # left double quote
-    "”": '"',    # right double quote
-    "…": "...",  # ellipsis
-    "·": ".",    # middle dot (fallback)
-})
-
-
-def _safe(text: str) -> str:
-    """Replace common Unicode characters that Helvetica (latin-1) cannot encode."""
-    return text.translate(_LATIN1_REPLACEMENTS).encode("latin-1", errors="replace").decode("latin-1")
+def _load(style: str, size: int) -> ImageFont.FreeTypeFont:
+    for path in _FONTS[style]:
+        try:
+            return ImageFont.truetype(path, size)
+        except OSError:
+            pass
+    return ImageFont.load_default()
 
 
 def _grade(score: float) -> str:
@@ -80,228 +92,223 @@ def _grade(score: float) -> str:
     return "Novice"
 
 
-def _bar_colour(score: float):
+def _bar_color(score: float):
     if score >= 70:
-        return C_BAR_OK
+        return C_GREEN
     if score >= 50:
-        return C_BAR_MID
-    return C_BAR_LOW
+        return C_ORANGE
+    return C_RED
 
 
-class ScorecardPDF(FPDF):
+# ── renderer ───────────────────────────────────────────────────────────────────
+
+class CertificateRenderer:
     def __init__(self, data: dict):
-        super().__init__(orientation="P", unit="mm", format="A4")
-        self.data = data
-        self.set_auto_page_break(auto=False)
-        self.add_page()
+        self.scores  = data.get("scores", {})
+        self.overall = float(data.get("overall", sum(
+            self.scores.get(k, 0) * w for k, w in WEIGHTS.items()
+        )))
+        self.grade   = _grade(self.overall)
+        self.name    = data.get("name", "Student")
+        self.domain  = data.get("domain", "-")
+        self.level   = data.get("level", "-")
+        self.date    = data.get("date", datetime.today().strftime("%Y-%m-%d"))
+        self.notes   = data.get("notes", "")
 
-    # ── header band ────────────────────────────────────────────────────────────
-    def _draw_header(self):
-        d = self.data
-        # dark bg
-        self.set_fill_color(*C_BG)
-        self.rect(0, 0, 210, 52, "F")
+        self.img = Image.new("RGB", (W, H), C_LEFT_BG)
+        self.d   = ImageDraw.Draw(self.img)
 
-        # accent stripe
-        self.set_fill_color(*C_ACCENT)
-        self.rect(0, 48, 210, 4, "F")
+    def _tw(self, text: str, font) -> int:
+        return int(self.d.textlength(text, font=font))
 
-        # brand name
-        self.set_text_color(*C_ACCENT)
-        self.set_font("Helvetica", "B", 22)
-        self.set_xy(12, 8)
-        self.cell(0, 10, BRAND, ln=True)
+    def _cx(self, text: str, font, x1: int, x2: int) -> int:
+        return x1 + (x2 - x1 - self._tw(text, font)) // 2
+
+    # ── LEFT PANEL ─────────────────────────────────────────────────────────────
+
+    def _left(self):
+        d  = self.d
+        x  = PAD_L
+        x2 = SPLIT - PAD_L
+
+        # amber top stripe
+        d.rectangle([0, 0, SPLIT, 7], fill=C_AMBER)
+
+        # brand
+        fb = _load("bold", 26)
+        d.text((x, 26), BRAND, font=fb, fill=C_AMBER)
+
+        # rule under brand
+        d.rectangle([x, 63, x2, 65], fill=C_AMBER)
 
         # subtitle
-        self.set_text_color(*C_WHITE)
-        self.set_font("Helvetica", "", 11)
-        self.set_xy(14, 20)
-        self.cell(0, 6, "Firmware Engineering Assessment Certificate -- embeddedguru")
+        fn = _load("reg", 13)
+        d.text((x, 72), "Firmware Engineering", font=fn, fill=C_MUTED)
+        d.text((x, 92), "Assessment Certificate", font=fn, fill=C_MUTED)
+
+        # certifies label
+        fn10 = _load("reg", 10)
+        d.text((x, 132), "THIS CERTIFIES THAT", font=fn10, fill=C_MUTED)
 
         # student name
-        self.set_font("Helvetica", "B", 16)
-        self.set_xy(14, 30)
-        self.cell(0, 8, _safe(d.get("name", "-")))
+        name_up = self.name.upper()
+        nsz     = 38 if len(name_up) <= 14 else 30 if len(name_up) <= 20 else 22
+        fb_name = _load("bold", nsz)
+        d.text((x, 152), name_up, font=fb_name, fill=C_WHITE)
 
-        # meta: domain | level | date
-        self.set_font("Helvetica", "", 9)
-        self.set_text_color(*C_ACCENT)
-        self.set_xy(14, 40)
-        issued = d.get("date", datetime.today().strftime("%Y-%m-%d"))
-        meta = _safe(f"Domain: {d.get('domain','-')}   |   Level: {d.get('level','-')}   |   Issued: {issued}")
-        self.cell(0, 5, meta)
+        # domain · level
+        fn14 = _load("reg", 14)
+        meta_y = 152 + nsz + 16
+        d.text((x, meta_y), f"{self.domain}  |  {self.level}", font=fn14, fill=C_AMBER)
+        fn12 = _load("reg", 12)
+        d.text((x, meta_y + 22), self.date, font=fn12, fill=C_MUTED)
 
-    # ── grade badge (top-right) ─────────────────────────────────────────────────
-    def _draw_grade_badge(self, overall: float):
-        grade = _grade(overall)
-        # outer circle simulation — filled rounded rect
-        bx, by, bw, bh = 148, 5, 52, 40
-        self.set_fill_color(*C_GOLD)
-        self.rect(bx, by, bw, bh, "F")
+        # separator
+        sep_y = meta_y + 58
+        d.rectangle([x, sep_y, x2, sep_y + 1], fill=(30, 50, 100))
 
-        self.set_text_color(*C_BG)
-        self.set_font("Helvetica", "B", 22)
-        self.set_xy(bx, by + 4)
-        self.cell(bw, 10, f"{overall:.0f}", align="C")
+        # score — large
+        fb_score = _load("bold", 110)
+        score_str = f"{self.overall:.0f}"
+        d.text((x, sep_y + 22), score_str, font=fb_score, fill=C_AMBER)
+        sw = self._tw(score_str, fb_score)
+        fn20 = _load("reg", 20)
+        d.text((x + sw + 8, sep_y + 88), "/ 100", font=fn20, fill=C_MUTED)
 
-        self.set_font("Helvetica", "B", 7)
-        self.set_xy(bx, by + 15)
-        self.cell(bw, 5, "/ 100", align="C")
+        # grade badge
+        badge_y = sep_y + 150
+        d.rectangle([x, badge_y, x2, badge_y + 50], fill=C_AMBER)
+        fb16 = _load("bold", 16)
+        gu   = self.grade.upper()
+        gx   = self._cx(gu, fb16, x, x2)
+        d.text((gx, badge_y + 15), gu, font=fb16, fill=C_LEFT_BG)
 
-        self.set_font("Helvetica", "B", 7)
-        self.set_xy(bx, by + 22)
-        # wrap long grade names
-        lines = grade.split()
-        if len(lines) > 1:
-            self.cell(bw, 4, lines[0].upper(), align="C", ln=True)
-            self.set_x(bx)
-            self.cell(bw, 4, " ".join(lines[1:]).upper(), align="C")
-        else:
-            self.cell(bw, 5, grade.upper(), align="C")
+        # bottom watermark
+        d.text((x, H - 56), BRAND,             font=_load("bold", 11), fill=C_AMBER)
+        d.text((x, H - 38), f"By {AUTHOR}",    font=_load("reg",  11), fill=C_MUTED)
+        d.text((x, H - 20), GITHUB,             font=_load("reg",  10), fill=C_MUTED)
 
-    # ── scores section ─────────────────────────────────────────────────────────
-    def _draw_scores(self, scores: Dict[str, float]):
-        y = 62
-        self.set_text_color(*C_DARK_TEXT)
-        self.set_font("Helvetica", "B", 11)
-        self.set_xy(12, y)
-        self.cell(0, 7, "Category Scores")
-        y += 10
+    # ── RIGHT PANEL ────────────────────────────────────────────────────────────
 
-        bar_x   = 14
-        bar_w   = 130
-        bar_h   = 6
-        row_h   = 14
-        label_w = 68
+    def _right(self):
+        d   = self.d
+        rx  = SPLIT + PAD_R
+        rx2 = W - PAD_RE
+
+        # white background
+        d.rectangle([SPLIT, 0, W, H], fill=C_RIGHT_BG)
+
+        # amber top stripe
+        d.rectangle([SPLIT, 0, W, 7], fill=C_AMBER)
+
+        # ── "Category Scores" header ───────────────────────────────────────────
+        cy = 28
+        d.text((rx, cy), "Category Scores", font=_load("bold", 22), fill=C_INK)
+        cy += 34
+        d.rectangle([rx, cy, rx2, cy + 1], fill=C_DIVIDER)
+        cy += 1   # cy is now at top of first row
+
+        # ── rows ──────────────────────────────────────────────────────────────
+        # divide the space: from cy to (H - footer - summary)
+        FOOTER_H  = 70    # space reserved at bottom
+        SUMMARY_H = 120   # overall + notes area
+        row_area  = H - cy - FOOTER_H - SUMMARY_H
+        ROW_H     = row_area // 5   # ~128px each
+
+        BAR_H     = 20
+        fn_lbl    = _load("bold", 18)
+        fn_wt     = _load("reg",  14)
+        fb_sc     = _load("bold", 17)
 
         for i, (key, label) in enumerate(CATEGORY_LABELS.items()):
-            score = scores.get(key, 0)
+            score      = float(self.scores.get(key, 0))
             weight_pct = int(WEIGHTS[key] * 100)
+            row_y      = cy + i * ROW_H
 
-            # alternating row bg
+            # alternating row background (full width)
             if i % 2 == 0:
-                self.set_fill_color(*C_LIGHT)
-                self.rect(bar_x - 2, y - 2, 184, row_h, "F")
+                d.rectangle([SPLIT + 2, row_y, W, row_y + ROW_H], fill=C_ROW_ALT)
 
-            # label
-            self.set_text_color(*C_DARK_TEXT)
-            self.set_font("Helvetica", "", 9)
-            self.set_xy(bar_x, y)
-            self.cell(label_w, 5, label)
+            # vertical centering within row
+            content_h = 22 + 10 + BAR_H   # label + gap + bar
+            top_pad   = (ROW_H - content_h) // 2
+            ry        = row_y + top_pad
 
-            # weight tag
-            self.set_text_color(*C_MID)
-            self.set_font("Helvetica", "", 7)
-            self.set_xy(bar_x + label_w - 2, y + 0.5)
-            self.cell(12, 4, f"{weight_pct}%", align="R")
+            # category label
+            d.text((rx, ry), label, font=fn_lbl, fill=C_INK)
 
-            # bar background
-            bary = y + 6
-            self.set_fill_color(*C_BAR_BG)
-            self.rect(bar_x, bary, bar_w, bar_h, "F")
+            # weight right-aligned on same line
+            w_str = f"{weight_pct}%"
+            d.text((rx2 - self._tw(w_str, fn_wt), ry + 3), w_str, font=fn_wt, fill=C_SUBTLE)
+
+            ry += 28   # move to bar line
+
+            # score label to right of bar
+            score_str   = f"{int(score)} / 100"
+            score_lbl_w = self._tw(score_str, fb_sc) + 16
+            bar_end     = rx2 - score_lbl_w
+
+            # bar track
+            d.rectangle([rx, ry, bar_end, ry + BAR_H], fill=C_BAR_BG)
 
             # bar fill
-            fill_w = bar_w * score / 100
-            self.set_fill_color(*_bar_colour(score))
-            self.rect(bar_x, bary, fill_w, bar_h, "F")
+            fill_px = max(0, int((bar_end - rx) * score / 100))
+            if fill_px:
+                d.rectangle([rx, ry, rx + fill_px, ry + BAR_H], fill=_bar_color(score))
 
-            # score label
-            self.set_text_color(*C_DARK_TEXT)
-            self.set_font("Helvetica", "B", 9)
-            self.set_xy(bar_x + bar_w + 4, bary - 1)
-            self.cell(20, bar_h + 2, f"{score:.0f} / 100")
+            # score text
+            d.text((bar_end + 10, ry + 1), score_str, font=fb_sc, fill=C_INK)
 
-            y += row_h
+        # ── overall + grade ────────────────────────────────────────────────────
+        sum_y = cy + 5 * ROW_H + 16
+        d.rectangle([rx, sum_y, rx2, sum_y + 1], fill=C_DIVIDER)
+        sum_y += 18
 
-        return y
+        fb20 = _load("bold", 20)
+        overall_str = f"Overall Score:  {self.overall:.1f} / 100"
+        d.text((rx, sum_y), overall_str, font=fb20, fill=C_INK)
 
-    # ── overall + notes ────────────────────────────────────────────────────────
-    def _draw_overall(self, overall: float, notes: str, y: float):
-        y += 6
-        # divider
-        self.set_draw_color(*C_ACCENT)
-        self.set_line_width(0.5)
-        self.line(14, y, 196, y)
-        y += 6
+        grade_str = f"Grade:  {self.grade}"
+        gx = rx + self._tw(overall_str, fb20) + 32
+        d.text((gx, sum_y), grade_str, font=fb20, fill=C_AMBER)
+        sum_y += 42
 
-        self.set_text_color(*C_DARK_TEXT)
-        self.set_font("Helvetica", "B", 13)
-        self.set_xy(14, y)
-        self.cell(80, 7, f"Overall Score:  {overall:.1f} / 100")
+        # ── mentor note ────────────────────────────────────────────────────────
+        if self.notes:
+            fi15    = _load("ital", 15)
+            wrapped = textwrap.fill(self.notes, width=80)
+            d.text((rx, sum_y), wrapped, font=fi15, fill=C_MID)
 
-        self.set_font("Helvetica", "B", 10)
-        self.set_text_color(*C_ACCENT)
-        self.set_xy(100, y)
-        self.cell(0, 7, f"Grade:  {_grade(overall)}")
+        # ── footer ─────────────────────────────────────────────────────────────
+        foot_y = H - FOOTER_H + 8
+        d.rectangle([rx, foot_y, rx2, foot_y + 1], fill=C_DIVIDER)
+        foot_y += 10
 
-        y += 12
-        if notes:
-            self.set_text_color(*C_MID)
-            self.set_font("Helvetica", "I", 9)
-            self.set_xy(14, y)
-            self.multi_cell(180, 5, _safe(f"Mentor note: {notes}"))
-            y += 12
+        d.text((rx, foot_y),
+               "Share on LinkedIn  |  #EmbeddedGuru  |  #FirmwareEngineering",
+               font=_load("reg", 12), fill=C_AMBER)
+        d.text((rx, foot_y + 22),
+               f"Powered by {BRAND}  ·  {GITHUB}",
+               font=_load("reg", 11), fill=C_SUBTLE)
 
-        return y
+    # ── vertical divider between panels ────────────────────────────────────────
 
-    # ── footer watermark ───────────────────────────────────────────────────────
-    def _draw_footer(self):
-        # bottom accent band
-        self.set_fill_color(*C_BG)
-        self.rect(0, 272, 210, 25, "F")
-        self.set_fill_color(*C_ACCENT)
-        self.rect(0, 272, 210, 1.5, "F")
+    def _divider(self):
+        self.d.rectangle([SPLIT, 0, SPLIT + 2, H], fill=C_SPLIT)
 
-        self.set_text_color(*C_MID)
-        self.set_font("Helvetica", "", 7.5)
-        self.set_xy(0, 278)
-        self.cell(210, 5, WATERMARK, align="C")
+    # ── compose ────────────────────────────────────────────────────────────────
 
-        self.set_text_color(*C_ACCENT)
-        self.set_font("Helvetica", "B", 7.5)
-        self.set_xy(0, 284)
-        self.cell(210, 5, "Share on LinkedIn  |  #EmbeddedGuru  |  #FirmwareEngineering", align="C")
-
-    # ── linkedin tip box ───────────────────────────────────────────────────────
-    def _draw_share_tip(self, y: float, overall: float):
-        y = max(y, 210)
-        self.set_fill_color(*C_BG)
-        self.rect(14, y, 182, 22, "F")
-        self.set_fill_color(*C_ACCENT)
-        self.rect(14, y, 3, 22, "F")
-
-        self.set_text_color(*C_WHITE)
-        self.set_font("Helvetica", "B", 9)
-        self.set_xy(20, y + 3)
-        self.cell(0, 5, "Share your certificate")
-
-        self.set_font("Helvetica", "", 8)
-        self.set_text_color(180, 200, 220)
-        self.set_xy(20, y + 9)
-        self.cell(0, 5, 'Post this PDF on LinkedIn with the caption:')
-        self.set_xy(20, y + 14)
-        self.cell(0, 5, f'"Just passed the EmbeddedGuru assessment - {_grade(overall)} level  #EmbeddedGuru"')
-
-    # ── render all ─────────────────────────────────────────────────────────────
-    def render(self) -> None:
-        d       = self.data
-        scores  = d.get("scores", {})
-        overall = d.get("overall", sum(
-            scores.get(k, 0) * w for k, w in WEIGHTS.items()
-        ))
-
-        self._draw_header()
-        self._draw_grade_badge(overall)
-        y = self._draw_scores(scores)
-        y = self._draw_overall(overall, d.get("notes", ""), y)
-        self._draw_share_tip(y, overall)
-        self._draw_footer()
+    def render(self) -> Image.Image:
+        self._left()
+        self._right()
+        self._divider()
+        return self.img
 
 
 # ── public API ─────────────────────────────────────────────────────────────────
 
 def generate(assessment_json: Path, out_dir: Path | None = None) -> Path:
-    """Generate a scorecard PDF from an assessment JSON file. Returns the PDF path."""
+    """Generate a scorecard PNG from an assessment JSON file. Returns the PNG path."""
     assessment_json = Path(assessment_json)
     if not assessment_json.exists():
         raise FileNotFoundError(f"Assessment file not found: {assessment_json}")
@@ -309,23 +316,19 @@ def generate(assessment_json: Path, out_dir: Path | None = None) -> Path:
     with open(assessment_json, encoding="utf-8") as f:
         data = json.load(f)
 
-    # auto-compute overall if not present
+    scores = data.get("scores", {})
     if "overall" not in data:
-        scores = data.get("scores", {})
         data["overall"] = round(sum(scores.get(k, 0) * w for k, w in WEIGHTS.items()), 1)
-
     if "grade" not in data:
         data["grade"] = _grade(data["overall"])
 
-    out_dir = Path(out_dir) if out_dir else assessment_json.parent
+    out_dir  = Path(out_dir) if out_dir else assessment_json.parent
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    date_str = data.get("date", datetime.today().strftime("%Y-%m-%d"))
+    date_str  = data.get("date", datetime.today().strftime("%Y-%m-%d"))
     name_slug = data.get("name", "student").lower().replace(" ", "_")
-    out_path  = out_dir / f"scorecard_{name_slug}_{date_str}.pdf"
+    out_path  = out_dir / f"scorecard_{name_slug}_{date_str}.png"
 
-    pdf = ScorecardPDF(data)
-    pdf.render()
-    pdf.output(str(out_path))
-
+    img = CertificateRenderer(data).render()
+    img.save(str(out_path), "PNG", dpi=(150, 150))
     return out_path

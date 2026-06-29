@@ -25,12 +25,14 @@ def main():
 commands:
   install     Install the EmbeddedGuru skill into Claude Code
   uninstall   Remove the skill (prompts before deleting student data)
+  run         Launch a Claude Code session (respects auto-mode preference)
   add         Add a document or datasheet to the curriculum knowledge base
-  scorecard   Generate a PDF scorecard from an assessment JSON file
+  scorecard   Generate a PNG scorecard from an assessment JSON file
 
 examples:
   embeddedguru install
   embeddedguru install --dry-run
+  embeddedguru run
   embeddedguru uninstall
   embeddedguru uninstall --keep-data
   embeddedguru uninstall --all
@@ -69,6 +71,12 @@ examples:
         dest="delete_all",
         action="store_true",
         help="Remove everything including student data without prompting",
+    )
+
+    # run
+    subparsers.add_parser(
+        "run",
+        help="Launch a Claude Code session (uses --dangerously-skip-permissions if auto-mode is ON)",
     )
 
     # add
@@ -111,6 +119,10 @@ examples:
         elif args.command == "uninstall":
             sys.exit(uninstall(keep_data=args.keep_data, delete_all=args.delete_all))
 
+        elif args.command == "run":
+            from .runner import run_session
+            sys.exit(run_session())
+
         elif args.command == "add":
             from .adder import add_document
             sys.exit(add_document(args.file))
@@ -123,7 +135,7 @@ examples:
                 out = generate(Path(args.assessment), Path(args.out) if args.out else None)
                 c.ok(f"Scorecard written to: {out}")
                 print()
-                print(f"  Open the PDF and share it on LinkedIn!")
+                print(f"  Open the PNG and share it on LinkedIn!")
                 print(f"  Tag it with #EmbeddedGuru #FirmwareEngineering")
                 print()
                 sys.exit(0)
