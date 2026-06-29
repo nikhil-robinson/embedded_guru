@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68", "setuptools-scm", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "embedded-guru"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Firmware development mentor skill for Claude Code — teaches bare-metal embedded firmware by doing"
 readme = "README.md"
 license = "MIT"
@@ -37,6 +37,9 @@ Repository = "https://github.com/nikhil-robinson/embedded_guru"
 
 [project.scripts]
 embeddedguru = "embedded_guru.cli:main"
+
+[tool.setuptools_scm]
+# version derived from git tags (e.g. v0.1.0 → 0.1.0, untagged → 0.1.0.dev5+gabcdef)
 
 [tool.setuptools.packages.find]
 where = ["."]
