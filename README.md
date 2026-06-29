@@ -140,6 +140,49 @@ embeddedguru install
 | `/guru assignment` | Check your open assignments |
 | `/guru goal` | Review or update your end goal |
 | `/guru profile` | See your full student profile |
+| `/guru interview` | Run a mock technical interview — calibrated to your level and domain |
+| `/guru assess` | Run a formal assessment → generates a PDF scorecard you can share |
+
+---
+
+## Mock Interview
+
+`/guru interview` simulates a real embedded engineering technical interview: 8–10 questions across warm-up, register-level, debugging scenario, and system design categories — calibrated to your current level.
+
+No hints. No feedback mid-session. Debrief with per-question scores, strengths, gaps, and interview readiness at the end.
+
+---
+
+## Assessment Scorecard
+
+`/guru assess` runs a formal 5-category scored test and generates a **PDF certificate** you can share on LinkedIn.
+
+**Categories:**
+- Core Firmware Fundamentals (20%)
+- Protocol Knowledge (25%)
+- Safety & Reliability (20%)
+- Domain Expertise (25%)
+- Debugging & Problem Solving (10%)
+
+**Grades:** Novice → Practitioner → Engineer → Senior Engineer → Expert → Principal Engineer
+
+The scorecard PDF is watermarked with EmbeddedGuru branding and your name.
+
+---
+
+## Teach the Mentor Your Datasheets
+
+Drop any datasheet, reference manual, DBC file, or application note into the curriculum:
+
+```bash
+embeddedguru add ~/Downloads/STM32H7_RM.pdf
+embeddedguru add ~/projects/vehicle_signals.dbc
+embeddedguru add ~/docs/company_spi_spec.md
+```
+
+On your next `/guru` session, the knowledge graph is rebuilt automatically — and the mentor can now answer questions grounded in your exact chip, bus definition, or document.
+
+---
 
 ---
 
@@ -147,7 +190,9 @@ embeddedguru install
 
 ```bash
 embeddedguru install --dry-run        # preview without making changes
-embeddedguru install --skip-graphify  # skip graph build (offline / CI)
+embeddedguru install --skip-graphify  # skip graphify check (offline / CI)
+embeddedguru add <file>               # add any document to the curriculum
+embeddedguru scorecard <file.json>    # generate PDF from an assessment JSON
 ```
 
 ---

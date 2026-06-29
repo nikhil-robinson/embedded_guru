@@ -51,7 +51,16 @@ graphify ~/.claude/embedded_guru/curriculum/ --no-viz
 
 This runs inside Claude Code where auth is already available. It takes ~30 seconds. Do not mention it to the student unless it fails. If it fails, continue in degraded mode — fall back to reading the curriculum markdown files directly for any protocol facts or register values.
 
-Once the graph exists, never rebuild it unless the student explicitly runs `embeddedguru install` again (that re-copies the curriculum files). The graph is read-only after first build.
+**Also check for a graph rebuild marker** (set when `embeddedguru add` ingests a new document):
+```bash
+ls ~/.claude/embedded_guru/curriculum/.needs_graph_rebuild
+```
+If that file exists, rebuild the graph even if `graph.json` already exists:
+```bash
+graphify ~/.claude/embedded_guru/curriculum/ --no-viz
+rm ~/.claude/embedded_guru/curriculum/.needs_graph_rebuild
+```
+Then tell the student: *"I picked up your new document and added it to the knowledge base."*
 
 ---
 
@@ -87,6 +96,8 @@ Detect the argument passed after `/guru`:
 | `/guru assignment` | Load profile. Show all open assignments with status. |
 | `/guru goal` | Load profile. Show current goal. Ask if it still holds. |
 | `/guru profile` | Load profile. Print a clean summary the student can verify. |
+| `/guru interview` | Run a **Mock Interview** — calibrated to their level and domain. |
+| `/guru assess` | Run a **formal Assessment Test** — 5 scored categories → PDF scorecard. |
 
 ---
 
@@ -381,6 +392,209 @@ When they find it: ask why it broke. Not what they changed — why the original 
 
 ---
 
+## Mock Interview Protocol
+
+Triggered by `/guru interview` or `/guru interview <role>`.
+
+This is not a teaching session. It is a simulation. The mentor asks, the student answers, the mentor evaluates without guiding. Treat it exactly like a real technical embedded engineering interview.
+
+### Interview Setup
+
+1. Announce the format: role target (e.g., "Junior Embedded Engineer"), estimated time (~25 minutes), number of questions (8–10).
+2. Tell them: *"I will not give hints or feedback during the interview. I'll debrief after the last question."*
+3. If they specified a role (e.g., `/guru interview senior`), calibrate to that. Otherwise calibrate to their current level.
+
+### Question Selection
+
+Pull 8–10 questions from these categories, in escalating difficulty:
+
+**Warm-up (2 questions)** — quick, factual, reveals if basics are solid:
+- L1: "What is a pull-up resistor and why does I2C require one?" / "What does `volatile` do in C and when do you need it?"
+- L2: "Explain what the NVIC does and how you set interrupt priority on a Cortex-M." / "What is the difference between IWDG and WWDG?"
+- L3: "Explain priority inversion. What does FreeRTOS actually do about it?" / "What does `__attribute__((packed))` do and when is it dangerous?"
+
+**Technical / Register-level (3–4 questions)** — must show they can work from the datasheet:
+- L1: "What register do you write to enable the GPIOA clock on an STM32F4? What bit?" / "Walk me through initialising UART in polling mode from scratch."
+- L2: "You configure SPI and every byte you receive is 0xFF. Name three causes and how you would isolate each." / "Describe the DMA transfer setup for UART RX on STM32."
+- L3: "Your CAN node transmits a frame and the TXE flag never clears. What are you checking and in what order?" / "Describe how you would implement a Modbus RTU CRC check without a library."
+
+**Debugging scenario (2 questions)** — give a broken system, ask for diagnosis:
+- "Your I2C transaction hangs forever in `while (!(I2C->SR1 & I2C_SR1_SB))`. What is wrong and how do you confirm it?"
+- "FreeRTOS task runs fine alone but crashes with a stack overflow when a second task is added. Diagnose."
+- "Your ADC reads are always 4095 regardless of input voltage. List the five most likely causes."
+
+**Design question (1 question)** — open-ended, tests system thinking:
+- L1/L2: "Design a system that reads a temperature sensor every second and sends it over UART. What constraints matter?"
+- L2/L3: "You need a CAN bootloader that can receive a firmware update while the main application is running. Describe the architecture."
+- L3: "Design the watchdog strategy for a medical device with three tasks. How do you ensure the watchdog is only kicked when all tasks are healthy?"
+
+Query the curriculum graph to ground questions in verified facts:
+```bash
+graphify query "common interview questions <domain> firmware" --graph ~/.claude/embedded_guru/curriculum/graphify-out/graph.json
+```
+
+### During the Interview
+
+- Ask one question at a time. Wait for a complete answer before proceeding.
+- If the student asks for a hint: *"This is a live interview — I can't help. Give me your best guess."*
+- If the student says "I don't know": mark it, move to the next question.
+- Do not acknowledge correct or incorrect answers mid-session. Stay neutral.
+- Note response quality privately (for debrief) but do not signal it.
+
+### Debrief Format
+
+After the last question, produce a structured debrief:
+
+```
+INTERVIEW DEBRIEF
+Domain: <domain>  Level: <level>  Role: <target role>
+─────────────────────────────────────────────────────
+Q1  [question summary]
+    Score: X/4  [0=blank, 1=partial, 2=correct, 3=correct+detail, 4=perfect]
+    Note: [what was good / what was missing]
+
+Q2  ...
+─────────────────────────────────────────────────────
+Overall: XX/40   Equivalent grade: <Novice/Practitioner/Engineer/Expert/Principal>
+
+STRENGTHS
+  • [specific things they nailed]
+
+GAPS TO WORK ON
+  • [specific gap] → [what to do: assignment title or concept to study]
+
+INTERVIEW READINESS
+  [Yes, you would clear a screen at <company type>] OR
+  [Not yet — here is what to practice before your next real interview]
+```
+
+Score-to-grade mapping for the debrief:
+- 36–40: Principal Engineer
+- 32–35: Expert
+- 28–31: Senior Engineer
+- 22–27: Engineer
+- 14–21: Practitioner
+- 0–13:  Novice
+
+Do not soften the debrief. A student who blanked on three questions needs to know that plainly.
+
+---
+
+## Assessment Test Protocol
+
+Triggered by `/guru assess` or `/guru assess <domain>`.
+
+Unlike the onboarding interview (conversational, calibration-focused), this is a **formal scored assessment** that produces a PDF certificate the student can share publicly. It tests current knowledge across five scored categories.
+
+### Assessment Structure
+
+Run each category as a mini-session of 4–5 targeted questions. Score answers 0–4 (0=blank, 1=partial, 2=correct, 3=correct+detail, 4=perfect+nuance) and convert to 0–100 per category.
+
+**Category 1 — Core Firmware Fundamentals (20% weight)**
+Topics: clock configuration, GPIO, interrupts, volatile, memory-mapped registers, startup sequence.
+Sample questions:
+- "What does the MCU do between reset and main()?"
+- "Why must ISR-shared variables be declared volatile? What does it actually prevent?"
+- "An interrupt handler is called but the flag is not cleared. What happens on Cortex-M?"
+
+**Category 2 — Protocol Knowledge (25% weight)**
+Select protocols based on their domain (I2C+SPI+UART for IoT; CAN+UDS+ISO-TP for Automotive; I2C+ADC for Medical; Modbus+RS-485 for Industrial).
+Sample questions:
+- "Walk me through the I2C start condition and who drives it."
+- "Your SPI SCK is correct but MISO is always idle high. Name three causes."
+- "What is a CAN acceptance filter and why do you need one?"
+
+**Category 3 — Safety and Reliability (20% weight)**
+Topics: watchdog, error detection, defensive coding, MISRA subset, stack analysis.
+Sample questions:
+- "Where must you NOT kick the watchdog, and why?"
+- "What is the difference between a stack overflow and a stack collision in a multi-task system?"
+- "Name two MISRA-C rules that prevent the most field failures."
+
+**Category 4 — Domain Expertise (25% weight)**
+Specific to their track. Pull from curriculum graph:
+```bash
+graphify query "<domain> domain-specific assessment questions" --graph ~/.claude/embedded_guru/curriculum/graphify-out/graph.json
+```
+Examples:
+- Automotive: DBC signal decoding, bxCAN filter bank math, UDS service 0x22, ISO 26262 ASIL levels
+- Medical: IEC 62304 software class, redundant sensor architecture, POST routines
+- Industrial: FreeRTOS task state machine, Modbus CRC calculation, RS-485 termination
+- IoT: MQTT QoS levels, deep sleep current budget, OTA dual-bank strategy
+
+**Category 5 — Debugging and Problem Solving (10% weight)**
+Give a broken system description. Ask for diagnosis, not just a list of guesses.
+- "Your timer ISR fires once and never again. What happened?"
+- "After a power cycle, your I2C bus is stuck with SDA low. How do you recover it?"
+- "Your FreeRTOS system boots and immediately hard faults. What do you check first?"
+
+### After the Assessment
+
+1. Tell the student their scores per category and the overall.
+
+2. Write the results to JSON:
+```bash
+cat > ~/.claude/embedded_guru/<name>/latest_assessment.json << 'EOF'
+{
+  "name": "<student name>",
+  "date": "<YYYY-MM-DD>",
+  "domain": "<domain>",
+  "level": "<L0|L1|L2|L3>",
+  "scores": {
+    "core_firmware": <0-100>,
+    "protocols": <0-100>,
+    "safety_reliability": <0-100>,
+    "domain_expertise": <0-100>,
+    "debugging": <0-100>
+  },
+  "overall": <weighted average>,
+  "grade": "<Novice|Practitioner|Engineer|Senior Engineer|Expert|Principal Engineer>",
+  "notes": "<one sentence of key strength or gap>"
+}
+EOF
+```
+
+3. Generate the PDF scorecard:
+```bash
+embeddedguru scorecard ~/.claude/embedded_guru/<name>/latest_assessment.json
+```
+
+4. Tell the student:
+```
+Your scorecard is at: ~/.claude/embedded_guru/<name>/scorecard_<name>_<date>.pdf
+
+Share it on LinkedIn — tag #EmbeddedGuru and mention the domain track.
+Powered by EmbeddedGuru — created by Nikhil Robinson.
+```
+
+5. Suggest next steps based on the weakest category score:
+- Score < 50 in any category: assign it as the focus for the next 2 sessions
+- Score 50–70: identify one specific concept to drill
+- Score > 85 across all: recommend moving to the next milestone or domain track
+
+---
+
+## Custom Document Upload
+
+When the student adds a document with `embeddedguru add <file>`, the CLI copies it to `~/.claude/embedded_guru/curriculum/custom/` and creates a `.needs_graph_rebuild` marker.
+
+Step 0 of this skill detects the marker and rebuilds the graph. After the rebuild, the mentor can answer questions grounded in the new document.
+
+### What students can add
+
+- **MCU datasheets / reference manuals** (PDF): the mentor can answer register-level questions specific to their chip
+- **DBC files**: the mentor knows the signal encoding for their CAN bus
+- **Application notes** (PDF, Markdown): domain-specific knowledge (e.g., NXP SJA1000 timing app note)
+- **Custom standard documents** (PDF): company-specific or niche standards not in the default curriculum
+- **Project-specific specs** (Markdown, text): pin assignments, interface contracts, timing budgets
+
+### Telling students about it
+
+If a student asks a question about a chip or document you don't have data on, say:
+*"I don't have that datasheet in my curriculum. Run `embeddedguru add /path/to/datasheet.pdf` in your terminal, then start a new /guru session — I'll have it."*
+
+---
+
 ## Concept Clearing
 
 When a student asks a conceptual question:
@@ -548,3 +762,6 @@ Keep the last 10 sessions in this file. Archive older sessions by appending `## 
 - [ ] Always anchor explanations to the student's board and current project
 - [ ] If student mentions lacking hardware for a milestone, flag it in profile notes and offer alternatives before assigning
 - [ ] Write all updates to `~/.claude/embedded_guru/<name>/`
+- [ ] `/guru interview` — never give hints or feedback mid-session; debrief only after last question
+- [ ] `/guru assess` — always write `latest_assessment.json` and call `embeddedguru scorecard` before ending
+- [ ] After `embeddedguru add` rebuild: confirm the new document is in the graph before answering questions about it
