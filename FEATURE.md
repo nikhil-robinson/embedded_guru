@@ -197,6 +197,41 @@ All files are plain markdown. No JSON, no hidden state. The student owns their d
 
 ---
 
+## Installation
+
+Works on Windows, macOS, and Linux. Requires pipx (one-time setup) and Python 3.7+. No PyPI publication needed — installs directly from GitHub.
+
+```
+pipx install git+https://github.com/nikhil-robinson/embedded_guru.git
+embeddedguru install
+```
+
+The installer:
+1. Copies `SKILL.md` and `references/` into `~/.claude/skills/embedded-guru/`
+2. Creates the student data directory at `~/.claude/embedded_guru/`
+3. Registers the `/guru` trigger in `~/.claude/CLAUDE.md`
+4. Handles re-runs gracefully — upgrades skill files, never touches student data
+5. `--dry-run` flag previews all actions without making changes
+
+To remove:
+
+```
+embeddedguru uninstall              # prompts before deleting student data
+embeddedguru uninstall --keep-data  # removes skill, keeps profiles
+embeddedguru uninstall --all        # removes everything, no prompt
+```
+
+To upgrade after a new release:
+
+```
+pipx upgrade embedded-guru
+embeddedguru install
+```
+
+Student data is never deleted automatically — always opt-in.
+
+---
+
 ## Implementation Notes (for SKILL.md author)
 
 - Profile load happens before any other output in every session
