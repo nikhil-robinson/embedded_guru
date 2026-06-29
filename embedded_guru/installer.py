@@ -231,6 +231,22 @@ def _try_install_pip_user() -> bool:
 
 # ─── graphify runner ───────────────────────────────────────────────────────────
 
+def _detect_backend() -> Optional[str]:
+    """Return the graphify --backend value based on available API keys in env."""
+    key_map = [
+        ("ANTHROPIC_API_KEY",  "claude"),
+        ("OPENAI_API_KEY",     "openai"),
+        ("GEMINI_API_KEY",     "gemini"),
+        ("GOOGLE_API_KEY",     "gemini"),
+        ("DEEPSEEK_API_KEY",   "deepseek"),
+        ("MOONSHOT_API_KEY",   "kimi"),
+    ]
+    for env_var, backend in key_map:
+        if os.environ.get(env_var):
+            return backend
+    return None
+
+
 def _run_graphify(path: Path, update: bool = False, dry_run: bool = False) -> bool:
     """Run graphify on path. Returns True on success."""
     # Prefer CLI binary; fall back to python -m graphify
@@ -242,6 +258,13 @@ def _run_graphify(path: Path, update: bool = False, dry_run: bool = False) -> bo
         cmd = [sys.executable, "-m", "graphify", str(path), "--no-viz"]
     else:
         c.warn("graphify not available — skipping graph build")
+        return False
+
+    backend = _detect_backend()
+    if backend:
+        cmd += ["--backend", backend]
+    else:
+        c.warn("No LLM API key found in environment — set ANTHROPIC_API_KEY and re-run install")
         return False
 
     if update:
@@ -515,7 +538,7 @@ def _print_summary(dry_run: bool, reinstall: bool, graphify_ok: bool, warnings: 
         print()
         if not graphify_ok:
             print(f"  {c.bold('To enable graph queries later:')}")
-            print(f"    uv tool install graphifyy")
+            print(f"    export ANTHROPIC_API_KEY=sk-ant-...")
             print(f"    embeddedguru install")
 
     print()
