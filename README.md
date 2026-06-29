@@ -1,25 +1,21 @@
 <div align="center">
 
-```
-  _____           _              _     _          _  _____
- | ____|_ __ ___ | |__   ___  __| | __| | ___  __| |/ ___| _   _ _ __ _   _
- |  _| | '_ ` _ \| '_ \ / _ \/ _` |/ _` |/ _ \/ _` | |  _| | | | '__| | | |
- | |___| | | | | | |_) |  __/ (_| | (_| |  __/ (_| | |_| | |_| | |  | |_| |
- |_____|_| |_| |_|_.__/ \___|\__,_|\__,_|\___|\__,_|\____|\__,_|_|   \__,_|
-```
+<h1>⚡ EmbeddedGuru</h1>
 
-**Firmware development mentor for Claude Code — adaptive, project-driven, no hand-holding.**
+<p><strong>Firmware development mentor for Claude Code — adaptive, project-driven, no hand-holding.</strong></p>
 
-[![PyPI Version](https://img.shields.io/pypi/v/embedded-guru?style=for-the-badge&color=0A66C2&label=PyPI)](https://pypi.org/project/embedded-guru/)
-[![Python](https://img.shields.io/pypi/pyversions/embedded-guru?style=for-the-badge&color=3776AB)](https://pypi.org/project/embedded-guru/)
-[![Build](https://img.shields.io/github/actions/workflow/status/nikhil-robinson/embedded_guru/publish.yml?style=for-the-badge&label=CI)](https://github.com/nikhil-robinson/embedded_guru/actions)
-[![License](https://img.shields.io/github/license/nikhil-robinson/embedded_guru?style=for-the-badge&color=22C55E)](LICENSE)
-[![Downloads](https://img.shields.io/pypi/dm/embedded-guru?style=for-the-badge&color=F97316&label=installs%2Fmonth)](https://pypi.org/project/embedded-guru/)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-8B5CF6?style=for-the-badge)](https://github.com/nikhil-robinson/embedded_guru)
+<p>
+  <a href="https://pypi.org/project/embedded-guru/"><img src="https://img.shields.io/pypi/v/embedded-guru?style=for-the-badge&color=0A66C2" alt="PyPI Version"/></a>
+  <a href="https://pypi.org/project/embedded-guru/"><img src="https://img.shields.io/pypi/pyversions/embedded-guru?style=for-the-badge&color=3776AB" alt="Python Versions"/></a>
+  <a href="https://github.com/nikhil-robinson/embedded_guru/actions"><img src="https://img.shields.io/github/actions/workflow/status/nikhil-robinson/embedded_guru/publish.yml?style=for-the-badge&label=CI" alt="Build Status"/></a>
+  <img src="https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge" alt="License"/>
+  <a href="https://github.com/nikhil-robinson/embedded_guru/stargazers"><img src="https://img.shields.io/github/stars/nikhil-robinson/embedded_guru?style=for-the-badge&color=F59E0B" alt="Stars"/></a>
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-8B5CF6?style=for-the-badge" alt="Platform"/>
+</p>
 
-<br/>
-
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20this%20project-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/nikhilrobinson)
+<a href="https://buymeacoffee.com/nikhilrobinson">
+  <img src="https://img.shields.io/badge/☕%20Buy%20Me%20A%20Coffee-Support%20this%20project-FFDD00?style=for-the-badge&logoColor=black" alt="Buy Me A Coffee"/>
+</a>
 
 </div>
 
@@ -29,7 +25,7 @@
 
 EmbeddedGuru is a **Claude Code skill** that teaches bare-metal embedded firmware like a senior engineer would — by making you build things, not by explaining things.
 
-It doesn't write your code. It asks what the peripheral status register says. It assigns real hardware tasks with real exit criteria. It remembers where you left off, tracks your progress across sessions, and pushes back when you try to copy-paste your way through a concept.
+It doesn't write your code. It asks what the peripheral status register says. It assigns real hardware tasks with specific exit criteria. It remembers where you left off, tracks your progress across sessions, and pushes back when you try to copy-paste your way through a concept.
 
 It knows about registers, not libraries. It knows about datasheets, not tutorials.
 
@@ -64,7 +60,7 @@ Behind the scenes, the installer:
 
 1. Copies the **SKILL.md** mentor brain into `~/.claude/skills/embedded-guru/`
 2. Copies the **curriculum knowledge base** (protocols, registers, boards, standards) into `~/.claude/embedded_guru/curriculum/`
-3. Builds a **knowledge graph** with [Graphify](https://github.com/safishamsi/graphify) — every protocol fact and register value becomes a node the mentor queries instead of hallucinating
+3. Builds a **knowledge graph** with [Graphify](https://github.com/safishamsi/graphify) — every protocol fact and register value becomes a graph node the mentor queries instead of hallucinating
 4. Registers the `/guru` trigger in `~/.claude/CLAUDE.md`
 
 Every session end, your **student graph** (profile, assignments, milestones, progress) is updated — so the mentor always knows exactly where you are.
@@ -93,7 +89,7 @@ Before generating any output, the mentor queries the graph:
 
 ```bash
 graphify query "I2C pull-up resistor value" --graph ~/.claude/embedded_guru/curriculum/graphify-out/graph.json
-# → returns verified fact from curriculum, not hallucinated value
+# → returns verified fact from curriculum, not a hallucinated value
 ```
 
 ---
@@ -104,17 +100,12 @@ graphify query "I2C pull-up resistor value" --graph ~/.claude/embedded_guru/curr
 - Python 3.9+
 - pipx
 
-**Install pipx if you don't have it:**
+**Install pipx:**
 
 ```bash
-# macOS
-brew install pipx
-
-# Linux
-sudo apt install pipx
-
-# Windows
-pip install pipx
+brew install pipx        # macOS
+sudo apt install pipx    # Linux
+pip install pipx         # Windows
 ```
 
 ---
@@ -128,11 +119,7 @@ embeddedguru install
 
 > **Note:** Run `embeddedguru install` from Claude Code's built-in terminal — it has your `ANTHROPIC_API_KEY` available for the one-time curriculum graph build.
 
-Then open Claude Code and type:
-
-```
-/guru
-```
+Then open Claude Code and type `/guru`.
 
 ---
 
@@ -161,11 +148,8 @@ embeddedguru install
 ## Install Options
 
 ```bash
-# See what would be installed without making changes
-embeddedguru install --dry-run
-
-# Skip Graphify graph build (offline installs, CI environments)
-embeddedguru install --skip-graphify
+embeddedguru install --dry-run        # preview without making changes
+embeddedguru install --skip-graphify  # skip graph build (offline / CI)
 ```
 
 ---
@@ -178,8 +162,6 @@ embeddedguru uninstall --all    # removes everything including progress
 pipx uninstall embedded-guru
 ```
 
-Student profiles in `~/.claude/embedded_guru/` are kept by default.
-
 ---
 
 ## What the mentor will and won't do
@@ -191,9 +173,9 @@ Student profiles in `~/.claude/embedded_guru/` are kept by default.
 - Build a custom roadmap for your domain and board
 - Assign real hardware tasks with specific exit criteria
 - Tell you which register to read when you're stuck
-- Push back on code dumps ("I could. You'd fix this bug and forget how.")
+- Push back on code dumps — *"I could. You'd fix this bug and forget how."*
 - Acknowledge frustration before redirecting
-- Track everything across sessions — no re-explaining your background every time
+- Track everything across sessions — no re-explaining your background each time
 
 </details>
 
@@ -201,10 +183,10 @@ Student profiles in `~/.claude/embedded_guru/` are kept by default.
 <summary><b>Won't do</b></summary>
 
 - Write your firmware for you
-- Accept "it works" as a milestone exit (working code + test output required)
+- Accept "it works" as a milestone exit — working code + test output required
 - Let you skip Milestone 0 (datasheet literacy) regardless of claimed experience
 - Pretend a Raspberry Pi 4 is suitable for bare-metal embedded development
-- Teach I2C without asking what your pull-up resistor value is
+- Teach I2C without first asking what pull-up resistor value you used
 
 </details>
 
@@ -215,22 +197,18 @@ Student profiles in `~/.claude/embedded_guru/` are kept by default.
 | Board | Domain | Level | Notes |
 |---|---|---|---|
 | STM32 Nucleo-F446RE | All | L1–L3 | Recommended for most tracks |
-| STM32 Nucleo-F411RE | IoT, Medical | L1–L2 | Budget option |
+| STM32 Nucleo-F411RE | IoT · Medical | L1–L2 | Budget option |
 | ESP32-DevKitC | IoT | L1–L2 | WiFi/BT built-in |
 | Raspberry Pi Pico | IoT | L1 | Good starter board |
 | STM32F103 Blue Pill | All | L2–L3 | Cheap, widely available |
-| Arduino Uno | IoT | L0→L1 only | HAL-only, no bare-metal CAN |
+| Arduino Uno | IoT | L0 → L1 only | HAL-only, no bare-metal CAN |
 | Raspberry Pi 4 | — | — | ⚠ Not suitable for bare-metal embedded |
 
 ---
 
 ## Contributing
 
-PRs welcome for:
-- New curriculum files (`concepts/`, `hardware/`, `milestones/`)
-- New board entries in `hardware/boards.md`
-- Regression tests that expose wrong advice
-- Bug reports via [Issues](https://github.com/nikhil-robinson/embedded_guru/issues)
+PRs welcome for curriculum files, new board entries, and regression tests that expose wrong advice.
 
 ```bash
 git clone https://github.com/nikhil-robinson/embedded_guru
@@ -238,6 +216,8 @@ cd embedded_guru
 pip install -e .
 embeddedguru install --dry-run
 ```
+
+Open issues at [github.com/nikhil-robinson/embedded_guru/issues](https://github.com/nikhil-robinson/embedded_guru/issues)
 
 ---
 
@@ -251,8 +231,10 @@ MIT — see [LICENSE](LICENSE)
 
 Built by [Nikhil Robinson](https://github.com/nikhil-robinson)
 
-If this helped you understand why your I2C bus was stuck, consider buying a coffee.
+*If this helped you understand why your I2C bus was stuck at 3am, consider buying a coffee.*
 
-[![Buy Me A Coffee](https://img.shields.io/badge/☕_Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logoColor=black)](https://buymeacoffee.com/nikhilrobinson)
+<a href="https://buymeacoffee.com/nikhilrobinson">
+  <img src="https://img.shields.io/badge/☕%20Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logoColor=black" alt="Buy Me A Coffee"/>
+</a>
 
 </div>
