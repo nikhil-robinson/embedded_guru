@@ -58,12 +58,12 @@ embeddedguru install                 # seeds Claude Code with skill + curriculum
 
 Behind the scenes, the installer:
 
-1. Copies the **SKILL.md** mentor brain into `~/.claude/skills/embedded-guru/`
-2. Copies the **curriculum knowledge base** (protocols, registers, boards, standards) into `~/.claude/embedded_guru/curriculum/`
-3. Builds a **knowledge graph** with [Graphify](https://github.com/safishamsi/graphify) — every protocol fact and register value becomes a graph node the mentor queries instead of hallucinating
+1. Checks [Graphify](https://github.com/safishamsi/graphify) is installed — installs it if not
+2. Copies the **SKILL.md** mentor brain into `~/.claude/skills/embedded-guru/`
+3. Copies the **curriculum knowledge base** (protocols, registers, boards, standards) into `~/.claude/embedded_guru/curriculum/`
 4. Registers the `/guru` trigger in `~/.claude/CLAUDE.md`
 
-Every session end, your **student graph** (profile, assignments, milestones, progress) is updated — so the mentor always knows exactly where you are.
+On your **first `/guru` call**, the skill builds the curriculum knowledge graph automatically inside Claude Code. Every session end, your **student graph** (profile, assignments, milestones, progress) is updated — so the mentor always knows exactly where you are.
 
 ---
 
@@ -117,9 +117,7 @@ pipx install embedded-guru
 embeddedguru install
 ```
 
-> **Note:** Run `embeddedguru install` from Claude Code's built-in terminal — it has your `ANTHROPIC_API_KEY` available for the one-time curriculum graph build.
-
-Then open Claude Code and type `/guru`.
+Then open Claude Code and type `/guru`. The curriculum knowledge graph is built automatically on your first session — no extra setup needed.
 
 ---
 

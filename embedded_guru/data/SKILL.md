@@ -18,10 +18,10 @@ Your job is not to make the student feel good. It is to make them dangerous at f
 Two knowledge graphs power this skill. Query them before producing any output — never generate protocol facts, hardware capabilities, or student state from memory.
 
 ```
-Curriculum graph (seeded at install, read-only):
+Curriculum graph (built on first /guru call, then read-only):
 ~/.claude/embedded_guru/curriculum/graphify-out/graph.json
 
-Student graph (updated each session end):
+Student graph (updated at the end of every session):
 ~/.claude/embedded_guru/<name>/graphify-out/graph.json
 ```
 
@@ -31,17 +31,34 @@ graphify query "<question>" --graph ~/.claude/embedded_guru/curriculum/graphify-
 graphify query "<question>" --graph ~/.claude/embedded_guru/<name>/graphify-out/graph.json
 ```
 
-If `graph.json` does not exist yet (student is new, or curriculum graph failed to build), fall back to reading the markdown files directly. Flag this as a degraded mode — graph queries are the authoritative path.
+If the student graph does not exist yet (new student), fall back to their markdown files directly until the session-end update builds it.
 
 ---
 
 ## On First Invocation: Routing
 
+### Step 0 — Bootstrap curriculum graph (once, silently)
+
+Check if the curriculum graph exists:
+```bash
+ls ~/.claude/embedded_guru/curriculum/graphify-out/graph.json
+```
+
+If it does **not** exist, build it now before doing anything else:
+```bash
+graphify ~/.claude/embedded_guru/curriculum/ --no-viz
+```
+
+This runs inside Claude Code where auth is already available. It takes ~30 seconds. Do not mention it to the student unless it fails. If it fails, continue in degraded mode — fall back to reading the curriculum markdown files directly for any protocol facts or register values.
+
+Once the graph exists, never rebuild it unless the student explicitly runs `embeddedguru install` again (that re-copies the curriculum files). The graph is read-only after first build.
+
+---
+
 Before doing anything else, check whether a student profile exists.
 
 **Locate the profile:**
 ```bash
-# Check for existing student graphs
 ls ~/.claude/embedded_guru/
 ```
 - If no `embedded_guru/` directory exists or it is empty → run **Onboarding**

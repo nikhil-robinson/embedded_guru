@@ -1,4 +1,3 @@
-import os
 import re
 import shutil
 import subprocess
@@ -24,10 +23,9 @@ def install(dry_run: bool = False, skip_graphify: bool = False) -> int:
     c.header(f"EmbeddedGuru — installer v{__version__}")
     c.info(f"Platform: {_platform_label()}")
 
-    warnings: List[str] = []   # non-fatal issues collected during install
+    warnings: List[str] = []
     graphify_ok = False
 
-    # Hard requirements — fail fast if missing
     _check_claude_installed()
     _check_assets()
 
@@ -36,25 +34,17 @@ def install(dry_run: bool = False, skip_graphify: bool = False) -> int:
         existing = _read_version()
         c.warn(f"EmbeddedGuru {existing} already installed — upgrading to {__version__}")
 
-    # Graphify — soft dependency, skill works without it in degraded mode
     if skip_graphify:
-        c.warn("--skip-graphify: skipping Graphify install and graph build")
-        warnings.append("Graphify skipped — /guru will use markdown fallback (no graph queries)")
+        c.warn("--skip-graphify: skipping Graphify check")
+        warnings.append("Graphify skipped — /guru will prompt you to install it on first session")
     else:
         graphify_ok = _check_or_install_graphify(dry_run, warnings)
 
-    # Core install steps — each wrapped, failure is collected not fatal
     _install_skill_files(dry_run, warnings)
     _ensure_data_dir(dry_run, warnings)
-
-    if graphify_ok or dry_run:
-        _install_curriculum(dry_run, warnings)
-    else:
-        warnings.append("Curriculum graph not built — Graphify unavailable")
-
+    _install_curriculum(dry_run, warnings)
     _register(dry_run, warnings)
 
-    # Summary
     _print_summary(dry_run, reinstall, graphify_ok, warnings)
     return 0
 
@@ -106,30 +96,24 @@ def uninstall(keep_data: bool = False, delete_all: bool = False) -> int:
 # ─── graphify detection and install ────────────────────────────────────────────
 
 def _find_graphify() -> Optional[str]:
-    """Find the graphify binary. Checks PATH first, then Python Scripts dir."""
-    # 1. Already on PATH (most common case)
     found = shutil.which("graphify")
     if found:
         return found
 
-    # 2. Installed by pip but Scripts dir not on PATH yet (common on Windows and Mac)
     scripts_dir = Path(sysconfig.get_path("scripts"))
-    candidates = ["graphify", "graphify.exe", "graphify.cmd"]
-    for name in candidates:
+    for name in ("graphify", "graphify.exe", "graphify.cmd"):
         candidate = scripts_dir / name
         if candidate.exists():
             return str(candidate)
 
-    # 3. pipx / uv tool installs to ~/.local/bin (Linux/Mac) or %LOCALAPPDATA%\uv\bin (Windows)
-    local_bin_dirs = [
-        Path.home() / ".local" / "bin",
-    ]
+    import os
+    local_bin_dirs = [Path.home() / ".local" / "bin"]
     if sys.platform == "win32":
         local_appdata = Path(os.environ.get("LOCALAPPDATA", ""))
         if local_appdata:
             local_bin_dirs.append(local_appdata / "uv" / "bin")
     for d in local_bin_dirs:
-        for name in candidates:
+        for name in ("graphify", "graphify.exe", "graphify.cmd"):
             candidate = d / name
             if candidate.exists():
                 return str(candidate)
@@ -138,7 +122,6 @@ def _find_graphify() -> Optional[str]:
 
 
 def _graphify_importable() -> bool:
-    """Check if the graphify Python module is installed, regardless of CLI PATH."""
     result = subprocess.run(
         [sys.executable, "-c", "import graphify"],
         capture_output=True,
@@ -147,7 +130,6 @@ def _graphify_importable() -> bool:
 
 
 def _check_or_install_graphify(dry_run: bool, warnings: List[str]) -> bool:
-    """Returns True if graphify is available (or dry_run). Appends to warnings on soft failure."""
     c.header("Checking Graphify")
 
     found = _find_graphify()
@@ -156,7 +138,6 @@ def _check_or_install_graphify(dry_run: bool, warnings: List[str]) -> bool:
         return True
 
     if _graphify_importable():
-        # Module is installed but CLI not on PATH — can run via python -m graphify
         c.ok("graphify module found (will run via python -m graphify)")
         return True
 
@@ -166,7 +147,6 @@ def _check_or_install_graphify(dry_run: bool, warnings: List[str]) -> bool:
         c.info("[DRY RUN] would install graphifyy")
         return True
 
-    # Try install methods in order of preference
     installed = (
         _try_install_uv()
         or _try_install_pip()
@@ -174,19 +154,14 @@ def _check_or_install_graphify(dry_run: bool, warnings: List[str]) -> bool:
     )
 
     if not installed:
-        msg = (
-            "Could not install graphifyy automatically. "
-            "Install manually: uv tool install graphifyy  OR  pip install graphifyy"
-        )
+        msg = "Could not install graphifyy — install manually: pipx install graphifyy"
         c.warn(msg)
-        warnings.append(f"Graphify not installed — {msg}")
-        warnings.append("/guru will run in degraded mode (markdown fallback, no graph queries)")
+        warnings.append(msg)
         return False
 
-    # Verify install succeeded — check module import since PATH may not be updated yet
     if not _graphify_importable():
         c.warn("graphify installed but module not importable — check your Python environment")
-        warnings.append("graphify installed but import failed — graph build skipped")
+        warnings.append("graphify installed but import check failed")
         return False
 
     c.ok("graphify installed successfully")
@@ -198,10 +173,7 @@ def _try_install_uv() -> bool:
     if not uv:
         return False
     c.info("Trying: uv tool install graphifyy")
-    result = subprocess.run(
-        [uv, "tool", "install", "graphifyy", "-q"],
-        capture_output=True, text=True,
-    )
+    result = subprocess.run([uv, "tool", "install", "graphifyy", "-q"], capture_output=True)
     if result.returncode == 0:
         c.ok("graphify installed via uv tool")
         return True
@@ -211,8 +183,7 @@ def _try_install_uv() -> bool:
 def _try_install_pip() -> bool:
     c.info("Trying: pip install graphifyy")
     result = subprocess.run(
-        [sys.executable, "-m", "pip", "install", "graphifyy", "-q"],
-        capture_output=True, text=True,
+        [sys.executable, "-m", "pip", "install", "graphifyy", "-q"], capture_output=True
     )
     return result.returncode == 0
 
@@ -220,8 +191,7 @@ def _try_install_pip() -> bool:
 def _try_install_pip_user() -> bool:
     c.info("Trying: pip install --user graphifyy")
     result = subprocess.run(
-        [sys.executable, "-m", "pip", "install", "--user", "graphifyy", "-q"],
-        capture_output=True, text=True,
+        [sys.executable, "-m", "pip", "install", "--user", "graphifyy", "-q"], capture_output=True
     )
     if result.returncode == 0:
         c.ok("graphify installed via pip --user")
@@ -229,102 +199,33 @@ def _try_install_pip_user() -> bool:
     return False
 
 
-# ─── graphify runner ───────────────────────────────────────────────────────────
-
-def _detect_backend() -> Optional[str]:
-    """Return the graphify --backend value based on available API keys in env."""
-    key_map = [
-        ("ANTHROPIC_API_KEY",  "claude"),
-        ("OPENAI_API_KEY",     "openai"),
-        ("GEMINI_API_KEY",     "gemini"),
-        ("GOOGLE_API_KEY",     "gemini"),
-        ("DEEPSEEK_API_KEY",   "deepseek"),
-        ("MOONSHOT_API_KEY",   "kimi"),
-    ]
-    for env_var, backend in key_map:
-        if os.environ.get(env_var):
-            return backend
-    return None
-
-
-def _run_graphify(path: Path, update: bool = False, dry_run: bool = False) -> bool:
-    """Run graphify on path. Returns True on success."""
-    # Prefer CLI binary; fall back to python -m graphify
-    graphify_bin = _find_graphify()
-
-    if graphify_bin:
-        cmd = [graphify_bin, str(path), "--no-viz"]
-    elif _graphify_importable():
-        cmd = [sys.executable, "-m", "graphify", str(path), "--no-viz"]
-    else:
-        c.warn("graphify not available — skipping graph build")
-        return False
-
-    backend = _detect_backend()
-    if backend:
-        cmd += ["--backend", backend]
-    else:
-        c.warn("No LLM API key found in environment — set ANTHROPIC_API_KEY and re-run install")
-        return False
-
-    if update:
-        cmd.append("--update")
-
-    if dry_run:
-        c.info(f"[DRY RUN] would run: {' '.join(str(x) for x in cmd)}")
-        return True
-
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-    except subprocess.TimeoutExpired:
-        c.warn("graphify build timed out after 5 minutes — skipping")
-        return False
-    except OSError as e:
-        c.warn(f"graphify could not start: {e}")
-        return False
-
-    if result.returncode != 0:
-        c.warn(f"graphify exited with code {result.returncode}")
-        if result.stderr:
-            # Show first 300 chars of stderr, not the full wall of text
-            c.warn(result.stderr[:300].strip())
-        return False
-
-    c.ok("graphify build complete")
-    return True
-
-
-# ─── curriculum install ────────────────────────────────────────────────────────
+# ─── curriculum install (files only — graph built by the skill on first /guru) ─
 
 def _curriculum_dir() -> Path:
     return data_dir() / "curriculum"
 
 
 def _install_curriculum(dry_run: bool, warnings: List[str]):
-    c.header("Installing curriculum knowledge base")
+    c.header("Installing curriculum files")
     src = skill_assets() / "curriculum"
     dst = _curriculum_dir()
 
     if not src.is_dir():
-        msg = "No curriculum/ directory in package assets — skipping graph build"
+        msg = "No curriculum/ directory in package assets"
         c.warn(msg)
         warnings.append(msg)
         return
 
     if dry_run:
         c.info(f"[DRY RUN] would copy curriculum/ to {dst}")
-        c.info(f"[DRY RUN] would run: graphify {dst} --no-viz")
         return
 
-    # Atomic copy: write to temp dir first, rename on success
-    # This prevents a broken state if the copy fails midway
     parent = dst.parent
     try:
         with tempfile.TemporaryDirectory(dir=parent, prefix=".curriculum_tmp_") as tmp:
             tmp_dst = Path(tmp) / "curriculum"
             shutil.copytree(src, tmp_dst)
 
-            # Copy succeeded — atomically swap in
             if dst.exists():
                 old_backup = parent / ".curriculum_old"
                 if old_backup.exists():
@@ -334,7 +235,6 @@ def _install_curriculum(dry_run: bool, warnings: List[str]):
                     shutil.copytree(tmp_dst, dst)
                     shutil.rmtree(old_backup)
                 except Exception:
-                    # Restore backup on failure
                     if old_backup.exists() and not dst.exists():
                         old_backup.rename(dst)
                     raise
@@ -345,26 +245,10 @@ def _install_curriculum(dry_run: bool, warnings: List[str]):
         msg = f"Could not copy curriculum files: {e}"
         c.warn(msg)
         warnings.append(msg)
-        warnings.append("Curriculum graph not built — /guru will use SKILL.md fallback")
         return
 
-    c.ok(f"Curriculum files copied to {dst}")
-
-    # Build or update the graph
-    graph_json = dst / "graphify-out" / "graph.json"
-    if graph_json.exists():
-        c.info("Curriculum graph exists — running incremental update")
-        ok = _run_graphify(dst, update=True)
-    else:
-        c.info("Building curriculum knowledge graph (~30s)...")
-        ok = _run_graphify(dst, update=False)
-
-    if ok and graph_json.exists():
-        c.ok(f"Curriculum graph ready")
-    else:
-        msg = "Curriculum graph build failed — /guru will fall back to SKILL.md context"
-        c.warn(msg)
-        warnings.append(msg)
+    c.ok(f"Curriculum files ready at {dst}")
+    c.info("Knowledge graph will be built on your first /guru session")
 
 
 # ─── core install helpers ──────────────────────────────────────────────────────
@@ -379,7 +263,7 @@ def _check_claude_installed():
 def _check_assets():
     if not (skill_assets() / "SKILL.md").exists():
         c.err("Skill assets missing from package.")
-        c.err("Reinstall: pipx install --force git+https://github.com/nikhil-robinson/embedded_guru.git")
+        c.err("Reinstall: pipx install --force embedded-guru")
         raise SystemExit(1)
 
 
@@ -416,7 +300,7 @@ def _install_skill_files(dry_run: bool, warnings: List[str]):
 
     except (OSError, shutil.Error) as e:
         c.err(f"Failed to install skill files: {e}")
-        raise SystemExit(1)   # hard failure — skill is unusable without these
+        raise SystemExit(1)
 
 
 def _ensure_data_dir(dry_run: bool, warnings: List[str]):
@@ -450,7 +334,6 @@ def _register(dry_run: bool, warnings: List[str]):
         text = text.rstrip("\n") + "\n\n" + CLAUDE_MD_BLOCK + "\n"
 
         if not dry_run:
-            # Write atomically: temp file → rename (avoids corruption if killed mid-write)
             tmp = md.with_suffix(".tmp")
             tmp.write_text(text, encoding="utf-8")
             tmp.replace(md)
@@ -519,12 +402,7 @@ def _print_summary(dry_run: bool, reinstall: bool, graphify_ok: bool, warnings: 
     print(f"  Debug mode:       {c.bold('/guru debug')}")
     print(f"  View roadmap:     {c.bold('/guru roadmap')}")
     print(f"  Student data:     {c.bold(str(data_dir()))}")
-
-    graph_json = _curriculum_dir() / "graphify-out" / "graph.json"
-    if graphify_ok and (graph_json.exists() or dry_run):
-        print(f"  Curriculum graph: {c.bold(str(graph_json))}")
-    else:
-        print(f"  Curriculum graph: {c.yellow('not built — degraded mode')}")
+    print(f"  Graphify:         {c.bold('ready') if graphify_ok else c.yellow('not found — install with: pipx install graphifyy')}")
 
     if reinstall:
         print()
@@ -535,12 +413,9 @@ def _print_summary(dry_run: bool, reinstall: bool, graphify_ok: bool, warnings: 
         print(f"  {c.yellow('Warnings:')}")
         for w in warnings:
             print(f"    {c.yellow('⚠')} {w}")
-        print()
-        if not graphify_ok:
-            print(f"  {c.bold('To enable graph queries later:')}")
-            print(f"    export ANTHROPIC_API_KEY=sk-ant-...")
-            print(f"    embeddedguru install")
 
+    print()
+    print(f"  Open Claude Code and type {c.bold('/guru')} to start.")
     print()
 
 
