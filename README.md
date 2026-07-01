@@ -1,10 +1,7 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/nikhil-robinson/embedded_guru/main/.github/assets/banner.svg" alt="EmbeddedGuru" width="100%"/>
+<img src="https://raw.githubusercontent.com/nikhil-robinson/embedded_guru/main/.github/assets/banner.svg" alt="EmbeddedGuru — The AI mentor that teaches bare-metal embedded firmware by making you build — not by explaining." width="100%"/>
 
-<h1>⚡ EmbeddedGuru</h1>
-
-<p><strong>The AI mentor that teaches bare-metal embedded firmware by making you build — not by explaining.</strong></p>
 <p>Runs inside <a href="https://claude.ai/code">Claude Code</a>. Zero libraries. Zero hand-holding. Just registers, datasheets, and real hardware.</p>
 
 <p>

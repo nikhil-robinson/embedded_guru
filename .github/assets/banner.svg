@@ -42,10 +42,10 @@
   <text x="600" y="120" font-family="'Segoe UI', 'SF Pro Display', Arial, sans-serif" font-size="72" font-weight="800" text-anchor="middle" fill="url(#text)" letter-spacing="2">
     ⚡ EMBEDDEDGURU
   </text>
-  <text x="600" y="165" font-family="'Segoe UI', Arial, sans-serif" font-size="22" text-anchor="middle" fill="#9AA4C4" letter-spacing="3">
-    REGISTERS · NOT LIBRARIES &#8226; DATASHEETS · NOT TUTORIALS
+  <text x="600" y="168" font-family="'Segoe UI', Arial, sans-serif" font-size="21" text-anchor="middle" fill="#9AA4C4" letter-spacing="0.5">
+    The AI mentor that teaches bare-metal embedded firmware
   </text>
-  <text x="600" y="205" font-family="'Segoe UI', Arial, sans-serif" font-size="16" text-anchor="middle" fill="#5B6584" letter-spacing="2">
-    A FIRMWARE MENTOR SKILL FOR CLAUDE CODE
+  <text x="600" y="200" font-family="'Segoe UI', Arial, sans-serif" font-size="21" text-anchor="middle" fill="#9AA4C4" letter-spacing="0.5">
+    by making you build — not by explaining.
   </text>
 </svg>
