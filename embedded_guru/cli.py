@@ -92,7 +92,7 @@ examples:
     # scorecard
     p_scorecard = subparsers.add_parser(
         "scorecard",
-        help="Generate a PDF scorecard from an assessment JSON file",
+        help="Generate a PNG scorecard from an assessment JSON file",
     )
     p_scorecard.add_argument(
         "assessment",

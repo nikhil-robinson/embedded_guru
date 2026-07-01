@@ -2,7 +2,7 @@
 
 <h1>⚡ EmbeddedGuru</h1>
 
-<p><strong>Firmware development mentor for Claude Code — adaptive, project-driven, no hand-holding.</strong></p>
+<p><strong>Firmware development mentor for Claude Code — adaptive, project-driven, no spoon-feeding of answers.</strong></p>
 
 <p>
   <a href="https://pypi.org/project/embedded-guru/"><img src="https://img.shields.io/pypi/v/embedded-guru?style=for-the-badge&color=0A66C2" alt="PyPI Version"/></a>
@@ -141,7 +141,7 @@ embeddedguru install
 | `/guru goal` | Review or update your end goal |
 | `/guru profile` | See your full student profile |
 | `/guru interview` | Run a mock technical interview — calibrated to your level and domain |
-| `/guru assess` | Run a formal assessment → generates a PDF scorecard you can share |
+| `/guru assess` | Run a formal assessment → generates a PNG scorecard you can share |
 
 ---
 
@@ -155,7 +155,7 @@ No hints. No feedback mid-session. Debrief with per-question scores, strengths, 
 
 ## Assessment Scorecard
 
-`/guru assess` runs a formal 5-category scored test and generates a **PDF certificate** you can share on LinkedIn.
+`/guru assess` runs a formal 5-category scored test and generates a **PNG certificate** you can share on LinkedIn.
 
 **Categories:**
 - Core Firmware Fundamentals (20%)
@@ -166,7 +166,7 @@ No hints. No feedback mid-session. Debrief with per-question scores, strengths, 
 
 **Grades:** Novice → Practitioner → Engineer → Senior Engineer → Expert → Principal Engineer
 
-The scorecard PDF is watermarked with EmbeddedGuru branding and your name.
+The scorecard PNG is watermarked with EmbeddedGuru branding and your name.
 
 ---
 
@@ -184,15 +184,13 @@ On your next `/guru` session, the knowledge graph is rebuilt automatically — a
 
 ---
 
----
-
 ## Install Options
 
 ```bash
 embeddedguru install --dry-run        # preview without making changes
 embeddedguru install --skip-graphify  # skip graphify check (offline / CI)
 embeddedguru add <file>               # add any document to the curriculum
-embeddedguru scorecard <file.json>    # generate PDF from an assessment JSON
+embeddedguru scorecard <file.json>    # generate PNG from an assessment JSON
 ```
 
 ---
@@ -212,7 +210,8 @@ pipx uninstall embedded-guru
 <details>
 <summary><b>Will do</b></summary>
 
-- Assess your real level (L0–L3) from how you answer questions, not what you claim
+- Ask who you are first (12th standard, college student, ECE/EEE grad, or working professional) — then assess your real level (L0–L3) *within that persona* from how you answer questions, not what you claim
+- Teach you your first program from scratch if you've never written code at all, on your own board, in the same session — not send you off to learn elsewhere first
 - Build a custom roadmap for your domain and board
 - Assign real hardware tasks with specific exit criteria
 - Tell you which register to read when you're stuck

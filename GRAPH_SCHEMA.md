@@ -1,5 +1,7 @@
 # EmbeddedGuru — Knowledge Graph Schema
 
+> **Status: design reference, not yet implemented.** The runtime skill (`embedded_guru/data/SKILL.md`) does not use this structured node/edge schema. It queries the curriculum and student graphs with free-text `graphify query "<question>"` calls and reads back whatever Graphify returns — there are no `:Student`, `:Milestone`, `:ExitCriteria` nodes or typed edges in the actual system. This document describes a proposed stricter schema (see the Implementation Phases table at the bottom) that has not been built. Treat it as a future direction, not current behavior.
+
 Every fact the skill needs lives in this graph. The LLM queries specific nodes instead of reading large markdown files. No fact is inferred from context — it is retrieved from the graph. This eliminates hallucination at every point where the skill currently loads text into context and hopes the model reads it correctly.
 
 ---

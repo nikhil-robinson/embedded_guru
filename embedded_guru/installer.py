@@ -145,7 +145,7 @@ def _check_or_install_graphify(dry_run: bool, warnings: List[str]) -> bool:
     c.warn("graphify not found — attempting install")
 
     if dry_run:
-        c.info("[DRY RUN] would install graphifyy")
+        c.info("[DRY RUN] would install graphify")
         return True
 
     installed = (
@@ -155,7 +155,7 @@ def _check_or_install_graphify(dry_run: bool, warnings: List[str]) -> bool:
     )
 
     if not installed:
-        msg = "Could not install graphifyy — install manually: pipx install graphifyy"
+        msg = "Could not install graphify — install manually: pipx install graphify"
         c.warn(msg)
         warnings.append(msg)
         return False
@@ -173,8 +173,8 @@ def _try_install_uv() -> bool:
     uv = shutil.which("uv")
     if not uv:
         return False
-    c.info("Trying: uv tool install graphifyy")
-    result = subprocess.run([uv, "tool", "install", "graphifyy", "-q"], capture_output=True)
+    c.info("Trying: uv tool install graphify")
+    result = subprocess.run([uv, "tool", "install", "graphify", "-q"], capture_output=True)
     if result.returncode == 0:
         c.ok("graphify installed via uv tool")
         return True
@@ -182,17 +182,17 @@ def _try_install_uv() -> bool:
 
 
 def _try_install_pip() -> bool:
-    c.info("Trying: pip install graphifyy")
+    c.info("Trying: pip install graphify")
     result = subprocess.run(
-        [sys.executable, "-m", "pip", "install", "graphifyy", "-q"], capture_output=True
+        [sys.executable, "-m", "pip", "install", "graphify", "-q"], capture_output=True
     )
     return result.returncode == 0
 
 
 def _try_install_pip_user() -> bool:
-    c.info("Trying: pip install --user graphifyy")
+    c.info("Trying: pip install --user graphify")
     result = subprocess.run(
-        [sys.executable, "-m", "pip", "install", "--user", "graphifyy", "-q"], capture_output=True
+        [sys.executable, "-m", "pip", "install", "--user", "graphify", "-q"], capture_output=True
     )
     if result.returncode == 0:
         c.ok("graphify installed via pip --user")
@@ -453,7 +453,7 @@ def _print_summary(dry_run: bool, reinstall: bool, graphify_ok: bool, warnings: 
     print(f"  Debug mode:       {c.bold('/guru debug')}")
     print(f"  View roadmap:     {c.bold('/guru roadmap')}")
     print(f"  Student data:     {c.bold(str(data_dir()))}")
-    print(f"  Graphify:         {c.bold('ready') if graphify_ok else c.yellow('not found — install with: pipx install graphifyy')}")
+    print(f"  Graphify:         {c.bold('ready') if graphify_ok else c.yellow('not found — install with: pipx install graphify')}")
 
     if reinstall:
         print()

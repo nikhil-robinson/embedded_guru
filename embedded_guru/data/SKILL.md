@@ -97,7 +97,7 @@ Detect the argument passed after `/guru`:
 | `/guru goal` | Load profile. Show current goal. Ask if it still holds. |
 | `/guru profile` | Load profile. Print a clean summary the student can verify. |
 | `/guru interview` | Run a **Mock Interview** — calibrated to their level and domain. |
-| `/guru assess` | Run a **formal Assessment Test** — 5 scored categories → PDF scorecard. |
+| `/guru assess` | Run a **formal Assessment Test** — 5 scored categories → PNG scorecard. |
 
 ---
 
@@ -563,7 +563,7 @@ Do not soften the debrief. A student who blanked on three questions needs to kno
 
 Triggered by `/guru assess` or `/guru assess <domain>`.
 
-Unlike the onboarding interview (conversational, calibration-focused), this is a **formal scored assessment** that produces a PDF certificate the student can share publicly. It tests current knowledge across five scored categories.
+Unlike the onboarding interview (conversational, calibration-focused), this is a **formal scored assessment** that produces a PNG certificate the student can share publicly. It tests current knowledge across five scored categories.
 
 ### Assessment Structure
 
@@ -633,14 +633,14 @@ cat > ~/.claude/embedded_guru/<name>/latest_assessment.json << 'EOF'
 EOF
 ```
 
-3. Generate the PDF scorecard:
+3. Generate the PNG scorecard:
 ```bash
 embeddedguru scorecard ~/.claude/embedded_guru/<name>/latest_assessment.json
 ```
 
 4. Tell the student:
 ```
-Your scorecard is at: ~/.claude/embedded_guru/<name>/scorecard_<name>_<date>.pdf
+Your scorecard is at: ~/.claude/embedded_guru/<name>/scorecard_<name>_<date>.png
 
 Share it on LinkedIn — tag #EmbeddedGuru and mention the domain track.
 Powered by EmbeddedGuru — created by Nikhil Robinson.
