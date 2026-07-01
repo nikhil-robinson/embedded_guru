@@ -1,0 +1,51 @@
+<svg width="1200" height="260" viewBox="0 0 1200 260" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D1117"/>
+      <stop offset="100%" stop-color="#161B2E"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6C4CE0"/>
+      <stop offset="50%" stop-color="#00D1B2"/>
+      <stop offset="100%" stop-color="#FFB800"/>
+    </linearGradient>
+    <linearGradient id="text" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8B7CF6"/>
+      <stop offset="100%" stop-color="#00D1B2"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#232B45" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="260" fill="url(#bg)"/>
+  <rect width="1200" height="260" fill="url(#grid)" opacity="0.5"/>
+
+  <rect x="0" y="0" width="1200" height="6" fill="url(#glow)"/>
+  <rect x="0" y="254" width="1200" height="6" fill="url(#glow)"/>
+
+  <!-- circuit traces -->
+  <g stroke="#00D1B2" stroke-width="2" fill="none" opacity="0.35">
+    <path d="M 40 40 h 80 v 40 h 60"/>
+    <path d="M 1120 40 h -80 v 60 h -50"/>
+    <path d="M 60 220 h 100 v -30 h 70"/>
+    <path d="M 1140 220 h -90 v -40 h -60"/>
+  </g>
+  <g fill="#00D1B2" opacity="0.6">
+    <circle cx="120" cy="40" r="4"/>
+    <circle cx="200" cy="80" r="4"/>
+    <circle cx="1080" cy="40" r="4"/>
+    <circle cx="160" cy="220" r="4"/>
+    <circle cx="1050" cy="180" r="4"/>
+  </g>
+
+  <text x="600" y="120" font-family="'Segoe UI', 'SF Pro Display', Arial, sans-serif" font-size="72" font-weight="800" text-anchor="middle" fill="url(#text)" letter-spacing="2">
+    ⚡ EMBEDDEDGURU
+  </text>
+  <text x="600" y="165" font-family="'Segoe UI', Arial, sans-serif" font-size="22" text-anchor="middle" fill="#9AA4C4" letter-spacing="3">
+    REGISTERS · NOT LIBRARIES &#8226; DATASHEETS · NOT TUTORIALS
+  </text>
+  <text x="600" y="205" font-family="'Segoe UI', Arial, sans-serif" font-size="16" text-anchor="middle" fill="#5B6584" letter-spacing="2">
+    A FIRMWARE MENTOR SKILL FOR CLAUDE CODE
+  </text>
+</svg>

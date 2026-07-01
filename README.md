@@ -1,21 +1,26 @@
 <div align="center">
 
+<img src="https://raw.githubusercontent.com/nikhil-robinson/embedded_guru/main/.github/assets/banner.svg" alt="EmbeddedGuru" width="100%"/>
+
 <h1>⚡ EmbeddedGuru</h1>
 
-<p><strong>Firmware development mentor for Claude Code — adaptive, project-driven, no spoon-feeding of answers.</strong></p>
+<p><strong>The AI mentor that teaches bare-metal embedded firmware by making you build — not by explaining.</strong></p>
+<p>Runs inside <a href="https://claude.ai/code">Claude Code</a>. Zero libraries. Zero hand-holding. Just registers, datasheets, and real hardware.</p>
 
 <p>
-  <a href="https://pypi.org/project/embedded-guru/"><img src="https://img.shields.io/pypi/v/embedded-guru?style=for-the-badge&color=0A66C2" alt="PyPI Version"/></a>
-  <a href="https://pypi.org/project/embedded-guru/"><img src="https://img.shields.io/pypi/pyversions/embedded-guru?style=for-the-badge&color=3776AB" alt="Python Versions"/></a>
-  <a href="https://github.com/nikhil-robinson/embedded_guru/actions"><img src="https://img.shields.io/github/actions/workflow/status/nikhil-robinson/embedded_guru/publish.yml?style=for-the-badge&label=CI" alt="Build Status"/></a>
-  <img src="https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge" alt="License"/>
-  <a href="https://github.com/nikhil-robinson/embedded_guru/stargazers"><img src="https://img.shields.io/github/stars/nikhil-robinson/embedded_guru?style=for-the-badge&color=F59E0B" alt="Stars"/></a>
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-8B5CF6?style=for-the-badge" alt="Platform"/>
+  <a href="https://pypi.org/project/embedded-guru/"><img src="https://img.shields.io/pypi/v/embedded-guru?style=flat-square&logo=pypi&logoColor=white&label=version&color=6C4CE0&labelColor=0D1117" alt="PyPI Version"/></a>
+  <a href="https://pypi.org/project/embedded-guru/"><img src="https://img.shields.io/pypi/pyversions/embedded-guru?style=flat-square&logo=python&logoColor=white&label=python&color=00D1B2&labelColor=0D1117" alt="Python Versions"/></a>
+  <a href="https://github.com/nikhil-robinson/embedded_guru/actions"><img src="https://img.shields.io/github/actions/workflow/status/nikhil-robinson/embedded_guru/publish.yml?style=flat-square&logo=githubactions&logoColor=white&label=build&labelColor=0D1117" alt="Build Status"/></a>
+  <img src="https://img.shields.io/badge/license-MIT-00D1B2?style=flat-square&logo=opensourceinitiative&logoColor=white&labelColor=0D1117" alt="License"/>
+  <a href="https://github.com/nikhil-robinson/embedded_guru/stargazers"><img src="https://img.shields.io/github/stars/nikhil-robinson/embedded_guru?style=flat-square&logo=github&logoColor=white&label=stars&color=FFB800&labelColor=0D1117" alt="Stars"/></a>
+  <img src="https://img.shields.io/badge/platform-macOS_·_Linux_·_Windows-6C4CE0?style=flat-square&logo=gnometerminal&logoColor=white&labelColor=0D1117" alt="Platform"/>
 </p>
 
-<a href="https://buymeacoffee.com/nilkhil_robinson">
-  <img src="https://img.shields.io/badge/☕%20Buy%20Me%20A%20Coffee-Support%20this%20project-FFDD00?style=for-the-badge&logoColor=black" alt="Buy Me A Coffee"/>
-</a>
+<p>
+  <a href="#-quick-start"><img src="https://img.shields.io/badge/▶-Quick_Start-0D1117?style=for-the-badge&color=6C4CE0" alt="Quick Start"/></a>
+  <a href="#-four-domain-tracks"><img src="https://img.shields.io/badge/◆-Domain_Tracks-0D1117?style=for-the-badge&color=00D1B2" alt="Domain Tracks"/></a>
+  <a href="https://buymeacoffee.com/nilkhil_robinson"><img src="https://img.shields.io/badge/☕-Buy_Me_A_Coffee-0D1117?style=for-the-badge&color=FFB800" alt="Buy Me A Coffee"/></a>
+</p>
 
 </div>
 
@@ -23,11 +28,56 @@
 
 ## What is this?
 
-EmbeddedGuru is a **Claude Code skill** that teaches bare-metal embedded firmware like a senior engineer would — by making you build things, not by explaining things.
+**EmbeddedGuru** is a [Claude Code](https://claude.ai/code) skill that teaches bare-metal embedded firmware the way a senior engineer would — by making you build real things, not by explaining slides at you.
 
-It doesn't write your code. It asks what the peripheral status register says. It assigns real hardware tasks with specific exit criteria. It remembers where you left off, tracks your progress across sessions, and pushes back when you try to copy-paste your way through a concept.
+It won't write your code. It'll ask what the peripheral status register says. It assigns real hardware tasks with specific exit criteria, remembers exactly where you left off, tracks your progress across sessions, and pushes back the moment you try to copy-paste your way through a concept.
 
-It knows about registers, not libraries. It knows about datasheets, not tutorials.
+> It knows registers, not libraries. Datasheets, not tutorials.
+
+New to embedded systems entirely? New to Claude Code? Both are fine — the sections below walk through everything from scratch.
+
+---
+
+## 🚀 Quick Start
+
+New here? Start with **step 0** — it's the one people skip and then get stuck on.
+
+### 0. Install Claude Code
+
+EmbeddedGuru is a skill that runs *inside* [Claude Code](https://claude.ai/code), Anthropic's official CLI. If you don't have it yet:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+claude          # launches Claude Code — sign in with your Anthropic account when prompted
+```
+
+> Don't have Node.js? Grab it from [nodejs.org](https://nodejs.org) first (v18+). Full install docs: [docs.claude.com/claude-code](https://docs.claude.com/en/docs/claude-code)
+
+### 1. Install EmbeddedGuru
+
+```bash
+pipx install embedded-guru      # install the CLI (isolated, no dependency conflicts)
+embeddedguru install            # seeds Claude Code with the mentor skill + curriculum graph
+```
+
+Don't have `pipx`? See [Prerequisites](#prerequisites) below.
+
+### 2. Start learning
+
+```bash
+embeddedguru run
+```
+
+That's it — `embeddedguru run` launches Claude Code and drops you straight into your first `/guru` session. Prefer to do it manually? Open Claude Code yourself and type `/guru`.
+
+Behind the scenes, the installer:
+
+1. Checks [Graphify](https://github.com/safishamsi/graphify) is installed — installs it if not
+2. Copies the **SKILL.md** mentor brain into `~/.claude/skills/embedded-guru/`
+3. Copies the **curriculum knowledge base** (protocols, registers, boards, standards) into `~/.claude/embedded_guru/curriculum/`
+4. Registers the `/guru` trigger in `~/.claude/CLAUDE.md`
+
+On your **first session**, the skill builds the curriculum knowledge graph automatically inside Claude Code. Every session end, your **student graph** (profile, assignments, milestones, progress) is updated — so the mentor always knows exactly where you are.
 
 ---
 
@@ -45,25 +95,6 @@ It knows about registers, not libraries. It knows about datasheets, not tutorial
 </div>
 
 Every track shares a common foundation: **GPIO → UART → I2C → SPI → DMA** — from registers, not libraries.
-
----
-
-## How it works
-
-```
-pipx install embedded-guru          # install the CLI
-embeddedguru install                 # seeds Claude Code with skill + curriculum graph
-/guru                                # start your first session
-```
-
-Behind the scenes, the installer:
-
-1. Checks [Graphify](https://github.com/safishamsi/graphify) is installed — installs it if not
-2. Copies the **SKILL.md** mentor brain into `~/.claude/skills/embedded-guru/`
-3. Copies the **curriculum knowledge base** (protocols, registers, boards, standards) into `~/.claude/embedded_guru/curriculum/`
-4. Registers the `/guru` trigger in `~/.claude/CLAUDE.md`
-
-On your **first `/guru` call**, the skill builds the curriculum knowledge graph automatically inside Claude Code. Every session end, your **student graph** (profile, assignments, milestones, progress) is updated — so the mentor always knows exactly where you are.
 
 ---
 
@@ -96,7 +127,7 @@ graphify query "I2C pull-up resistor value" --graph ~/.claude/embedded_guru/curr
 
 ## Prerequisites
 
-- [Claude Code](https://claude.ai/code) installed
+- [Claude Code](https://claude.ai/code) installed — see [step 0](#-quick-start) above
 - Python 3.9+
 - pipx
 
@@ -107,17 +138,6 @@ brew install pipx        # macOS
 sudo apt install pipx    # Linux
 pip install pipx         # Windows
 ```
-
----
-
-## Install
-
-```bash
-pipx install embedded-guru
-embeddedguru install
-```
-
-Then open Claude Code and type `/guru`. The curriculum knowledge graph is built automatically on your first session — no extra setup needed.
 
 ---
 
@@ -319,12 +339,11 @@ MIT — see [LICENSE](LICENSE)
 
 <div align="center">
 
-Built by [Nikhil Robinson](https://github.com/nikhil-robinson)
+**Built by [Nikhil Robinson](https://github.com/nikhil-robinson)**
 
 *If this helped you understand why your I2C bus was stuck at 3am, consider buying a coffee.*
 
-<a href="https://buymeacoffee.com/nilkhil_robinson">
-  <img src="https://img.shields.io/badge/☕%20Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logoColor=black" alt="Buy Me A Coffee"/>
-</a>
+<a href="https://buymeacoffee.com/nilkhil_robinson"><img src="https://img.shields.io/badge/☕-Buy_Me_A_Coffee-0D1117?style=for-the-badge&color=FFB800" alt="Buy Me A Coffee"/></a>
+<a href="https://github.com/nikhil-robinson/embedded_guru"><img src="https://img.shields.io/badge/⭐-Star_on_GitHub-0D1117?style=for-the-badge&color=6C4CE0" alt="Star on GitHub"/></a>
 
 </div>
