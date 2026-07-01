@@ -449,7 +449,8 @@ def _print_summary(dry_run: bool, reinstall: bool, graphify_ok: bool, warnings: 
         print(f"  {prefix}{c.bold(f'EmbeddedGuru {__version__} installed successfully.')}")
 
     print()
-    print(f"  Start a session:  {c.bold('/guru')}")
+    print(f"  {c.bold('Start now:')}  {c.bold('embeddedguru run')}")
+    print()
     print(f"  Debug mode:       {c.bold('/guru debug')}")
     print(f"  View roadmap:     {c.bold('/guru roadmap')}")
     print(f"  Student data:     {c.bold(str(data_dir()))}")
@@ -466,7 +467,8 @@ def _print_summary(dry_run: bool, reinstall: bool, graphify_ok: bool, warnings: 
             print(f"    {c.yellow('⚠')} {w}")
 
     print()
-    print(f"  Open Claude Code and type {c.bold('/guru')} to start.")
+    print(f"  Run {c.bold('embeddedguru run')} to launch Claude Code and start automatically.")
+    print(f"  (Or open Claude Code yourself and type {c.bold('/guru')}.)")
     print()
 
 
